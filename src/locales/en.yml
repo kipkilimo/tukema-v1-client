@@ -1,0 +1,211 @@
+app:
+  name: tukema
+  tagline: Preserve • Explore • Connect
+
+nav:
+  dashboard: Dashboard
+  collections: Collections
+  artefacts: Artefacts
+  galleries: Galleries
+  exhibits: Exhibits
+  stories: Oral Histories
+  learning: Learning
+  events: Events
+  community: Community
+  second-messenger: Second Messenger
+  account: My Account
+  administration: Administration
+  settings: Settings
+  searchPlaceholder: Search artefacts, collections, stories...
+
+dashboard:
+  title: Dashboard
+  welcome: Welcome back
+  featuredArtefacts: Featured Artefacts
+  recentAdditions: Recent Additions
+  upcomingEvents: Upcoming Events
+  announcements: Announcements
+
+artefacts:
+  title: Artefacts
+  browse: Browse Artefacts
+  upload: Add Artefact
+  edit: Edit Artefact
+  delete: Delete Artefact
+  preview: Preview
+  download: Download
+  share: Share
+  bookmark: Bookmark
+
+  # NEW
+  status: Status
+  publish: Publish
+  archive: Archive
+  loadMore: Load more
+  dialogActions: Dialog actions
+  noDescription: No description
+  confirmDelete: 'Delete "{title}"? This cannot be undone.'
+
+  danger:
+    title: Danger zone
+    message: Destructive actions — permanent and cannot be undone.
+    clearList: Clear list
+    clearListHint: Clear list cache
+    resetStore: Reset store
+    resetStoreHint: Reset store
+    confirmReset: Reset the artefacts store? All cached data will be cleared.
+
+  fields:
+    title: Title
+    description: Description
+    creator: Creator / Maker
+    culture: Culture / Community
+    origin: Place of Origin
+    period: Period / Era
+    category: Category
+    material: Material
+    dimensions: Dimensions
+    provenance: Provenance
+    condition: Condition
+    accessionNumber: Accession Number
+    tags: Tags
+    language: Language
+
+  categories:
+    sculpture: Sculpture
+    textile: Textile
+    jewelry: Jewellery
+    pottery: Pottery
+    painting: Painting
+    carving: Carving
+    beadwork: Beadwork
+    metalwork: Metalwork
+    manuscript: Manuscript
+    musicalInstrument: Musical Instrument
+    ritualObject: Ritual Object
+    other: Other
+
+collections:
+  title: Collections
+  browse: Browse Collections
+  curated: Curated Collections
+  featured: Featured Collections
+  thematic: Thematic Collections
+  regional: Regional Collections
+
+galleries:
+  title: Galleries
+  browse: Browse Galleries
+  virtual: Virtual Galleries
+  permanent: Permanent Galleries
+  temporary: Temporary Exhibitions
+
+exhibits:
+  title: Exhibits
+  browse: Browse Exhibits
+  current: Current Exhibits
+  upcoming: Upcoming Exhibits
+  past: Past Exhibits
+  guided: Guided Tours
+
+stories:
+  title: Oral Histories
+  browse: Browse Stories
+  tellers: Storytellers
+  transcripts: Transcripts
+  recordings: Recordings
+  highlights: Highlights
+
+learning:
+  title: Learning
+  browse: Browse Learning
+  modules: Learning Modules
+  lessonPlans: Lesson Plans
+  activities: Activities
+  resources: Educational Resources
+
+events:
+  title: Events
+  exhibitions: Exhibitions
+  talks: Talks & Lectures
+  workshops: Workshops
+  festivals: Cultural Festivals
+  tours: Guided Tours
+
+community:
+  title: Community
+  members: Members
+  discussions: Discussions
+  announcements: Announcements
+  contributors: Contributors
+
+account:
+  profile: Profile
+  preferences: Preferences
+  language: Language
+  notifications: Notifications
+  security: Security
+  logout: Sign Out
+
+admin:
+  title: Administration
+  users: Users
+  organizations: Organizations
+  permissions: Permissions
+  settings: System Settings
+
+stats:
+  artefacts: Artefacts
+  collections: Collections
+  exhibits: Exhibits
+  stories: Oral Histories
+  members: Members
+  views: Views
+  discussions: Discussions
+  saving: Saving
+
+common:
+  create: Create
+  upload: Upload
+  save: Save
+  edit: Edit
+  delete: Delete
+  view: View
+  preview: Preview
+  download: Download
+  share: Share
+  search: Search
+  filter: Filter
+  sort: Sort
+  refresh: Refresh
+  back: Back
+  next: Next
+  close: Close
+  cancel: Cancel
+  submit: Submit
+  loading: Loading...
+  success: Success
+  error: Error
+  warning: Warning
+  noData: No data available
+  all: All
+  none: None
+  retry: Retry
+  status: Status
+  actions: Actions
+
+time:
+  today: Today
+  yesterday: Yesterday
+  thisWeek: This Week
+  thisMonth: This Month
+  thisYear: This Year
+  justNow: Just now
+
+locale:
+  english: English
+  spanish: Español
+  french: Français
+  arabic: العربية
+  amharic: አማርኛ
+  switchTo: Switch Language

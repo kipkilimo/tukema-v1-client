@@ -1,0 +1,211 @@
+app:
+  name: tukema
+  tagline: Préserver • Explorer • Connecter
+
+nav:
+  dashboard: Tableau de bord
+  collections: Collections
+  artefacts: Artefacts
+  galleries: Galeries
+  exhibits: Expositions
+  stories: Histoires orales
+  learning: Apprentissage
+  events: Événements
+  community: Communauté
+  second-messenger: Second Messenger
+  account: Mon compte
+  administration: Administration
+  settings: Paramètres
+  searchPlaceholder: Rechercher des artefacts, collections, histoires...
+
+dashboard:
+  title: Tableau de bord
+  welcome: Bon retour
+  featuredArtefacts: Artefacts en vedette
+  recentAdditions: Ajouts récents
+  upcomingEvents: Événements à venir
+  announcements: Annonces
+
+artefacts:
+  title: Artefacts
+  browse: Parcourir les artefacts
+  upload: Ajouter un artefact
+  edit: Modifier l'artefact
+  delete: Supprimer l'artefact
+  preview: Aperçu
+  download: Télécharger
+  share: Partager
+  bookmark: Ajouter aux favoris
+
+  # NOUVEAU — aligné sur l'anglais
+  status: Statut
+  publish: Publier
+  archive: Archiver
+  loadMore: Charger plus
+  dialogActions: Actions de dialogue
+  noDescription: Pas de description
+  confirmDelete: "Supprimer « {title} » ? Cette action est irréversible."
+
+  danger:
+    title: Zone dangereuse
+    message: Actions destructrices — permanentes et irréversibles.
+    clearList: Vider la liste
+    clearListHint: Vider le cache de la liste
+    resetStore: Réinitialiser le store
+    resetStoreHint: Réinitialiser le store
+    confirmReset: Réinitialiser le store des artefacts ? Toutes les données en cache seront effacées.
+
+  fields:
+    title: Titre
+    description: Description
+    creator: Créateur / Fabricant
+    culture: Culture / Communauté
+    origin: Lieu d'origine
+    period: Période / Époque
+    category: Catégorie
+    material: Matériau
+    dimensions: Dimensions
+    provenance: Provenance
+    condition: État
+    accessionNumber: Numéro d'inventaire
+    tags: Étiquettes
+    language: Langue
+
+  categories:
+    sculpture: Sculpture
+    textile: Textile
+    jewelry: Bijouterie
+    pottery: Poterie
+    painting: Peinture
+    carving: Sculpture sur bois
+    beadwork: Perlage
+    metalwork: Ferronnerie
+    manuscript: Manuscrit
+    musicalInstrument: Instrument de musique
+    ritualObject: Objet rituel
+    other: Autre
+
+collections:
+  title: Collections
+  browse: Parcourir les collections
+  curated: Collections curatées
+  featured: Collections en vedette
+  thematic: Collections thématiques
+  regional: Collections régionales
+
+galleries:
+  title: Galeries
+  browse: Parcourir les galeries
+  virtual: Galeries virtuelles
+  permanent: Galeries permanentes
+  temporary: Expositions temporaires
+
+exhibits:
+  title: Expositions
+  browse: Parcourir les expositions
+  current: Expositions en cours
+  upcoming: Expositions à venir
+  past: Expositions passées
+  guided: Visites guidées
+
+stories:
+  title: Histoires orales
+  browse: Parcourir les histoires
+  tellers: Conteurs
+  transcripts: Transcriptions
+  recordings: Enregistrements
+  highlights: Points forts
+
+learning:
+  title: Apprentissage
+  browse: Parcourir l'apprentissage
+  modules: Modules d'apprentissage
+  lessonPlans: Plans de leçon
+  activities: Activités
+  resources: Ressources éducatives
+
+events:
+  title: Événements
+  exhibitions: Expositions
+  talks: Conférences et causeries
+  workshops: Ateliers
+  festivals: Festivals culturels
+  tours: Visites guidées
+
+community:
+  title: Communauté
+  members: Membres
+  discussions: Discussions
+  announcements: Annonces
+  contributors: Contributeurs
+
+account:
+  profile: Profil
+  preferences: Préférences
+  language: Langue
+  notifications: Notifications
+  security: Sécurité
+  logout: Se déconnecter
+
+admin:
+  title: Administration
+  users: Utilisateurs
+  organizations: Organisations
+  permissions: Permissions
+  settings: Paramètres du système
+
+stats:
+  artefacts: Artefacts
+  collections: Collections
+  exhibits: Expositions
+  stories: Histoires orales
+  members: Membres
+  views: Vues
+  discussions: Discussions
+  saving: Enregistrement
+
+common:
+  create: Créer
+  upload: Téléverser
+  save: Enregistrer
+  edit: Modifier
+  delete: Supprimer
+  view: Voir
+  preview: Aperçu
+  download: Télécharger
+  share: Partager
+  search: Rechercher
+  filter: Filtrer
+  sort: Trier
+  refresh: Actualiser
+  back: Retour
+  next: Suivant
+  close: Fermer
+  cancel: Annuler
+  submit: Soumettre
+  loading: Chargement...
+  success: Succès
+  error: Erreur
+  warning: Avertissement
+  noData: Aucune donnée disponible
+  all: Tous
+  none: Aucun
+  retry: Réessayer
+  status: Statut
+  actions: Actions
+
+time:
+  today: Aujourd'hui
+  yesterday: Hier
+  thisWeek: Cette semaine
+  thisMonth: Ce mois-ci
+  thisYear: Cette année
+  justNow: À l'instant
+
+locale:
+  english: English
+  spanish: Español
+  french: Français
+  arabic: العربية
+  amharic: አማርኛ
+  switchTo: Changer de langue

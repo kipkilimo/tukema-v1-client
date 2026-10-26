@@ -1,0 +1,16 @@
+{
+  "include": [
+    "vite.config.*",
+    "vitest.config.*",
+    "cypress.config.*",
+    "playwright.config.*"
+  ],
+  "compilerOptions": {
+    "module": "esnext",
+    "composite": true,
+    "types": [
+      "node",
+      "vuetify"
+    ]
+  }
+}

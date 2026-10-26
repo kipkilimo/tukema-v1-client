@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/src/assets/icons/favicon.ico" type="image/x-icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tukema — Preserving Our Heritage, Inspiring Our Future.</title>
+
+  <!-- Google Fonts: Inter + Fira Code + Cormorant Garamond (TUKEMA Museum Brand) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       TUKEMA Museum — Typography & Theme (matches Vuetify config)
+       ========================================================================== */
+
+    :root {
+      --font-display: "Cormorant Garamond", Georgia, serif;
+      --font-heading: "Cormorant Garamond", Georgia, serif;
+      --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-code: "Fira Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
+
+      /* TUKEMA Museum — Light Theme (mirrors Vuetify `light`) */
+      --primary: #8B4513;
+      --primary-dark: #6b3410;
+      --primary-light: #a0522d;
+      --secondary: #2B2B2B;
+      --accent: #F08228;
+      --accent-dark: #d4691a;
+      --background: #F5EFE6;
+      --surface: #FFFFFF;
+      --dark: #1A1A1A;
+
+      --color-text-primary: #2B2B2B;
+      --color-text-secondary: #5a4a3a;
+      --color-text-muted: #8a7a6a;
+      --color-heading: #2B2B2B;
+
+      /* Gradients */
+      --gradient-brand: linear-gradient(135deg, #8B4513, #F08228);
+      --gradient-primary: linear-gradient(135deg, #8B4513, #a0522d);
+      --gradient-accent: linear-gradient(135deg, #F08228, #d4691a);
+      --gradient-dark: linear-gradient(135deg, #2B2B2B, #1A1A1A);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text-primary);
+      background: var(--background);
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ==========================================================================
+       Brand signature — .io-text (Fira Code + ochre)
+       ========================================================================== */
+    .io-text {
+      color: var(--accent) !important;
+      font-family: var(--font-code) !important;
+      font-weight: 600 !important;
+    }
+
+    /* Headings */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    .v-card-title,
+    .article-title,
+    .section-title,
+    .heading-sans {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-heading);
+    }
+
+    h1 {
+      font-size: 44px;
+      font-weight: 800;
+    }
+
+    h2 {
+      font-size: 34px;
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    h4 {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    h5 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    h6 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .display-text {
+      font-family: var(--font-display);
+      font-size: 52px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+      color: var(--color-heading);
+    }
+
+    p,
+    .v-card-text,
+    .body-text {
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+      max-width: 72ch;
+    }
+
+    .secondary-text {
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+
+    .caption-text {
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .small-label {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-muted);
+    }
+
+    .v-btn,
+    .v-list-item-title,
+    nav,
+    .menu-item,
+    .nav-link {
+      font-family: var(--font-ui);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .v-card {
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(43, 43, 43, 0.06);
+    }
+
+    .v-card-title {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--color-heading);
+    }
+
+    code,
+    pre,
+    .code-block {
+      font-family: var(--font-code);
+      font-size: 14px;
+      font-weight: 400;
+      background: #ede3d3;
+      padding: 0.2em 0.4em;
+      border-radius: 4px;
+      color: var(--secondary);
+    }
+
+    /* ==========================================================================
+       TUKEMA Museum — LOADING SCREEN
+       ========================================================================== */
+
+    #initial-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at 50% 40%, #faf5ee 0%, #f5efe6 60%, #ede3d3 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+      overflow: hidden;
+    }
+
+    /* Decorative backdrop — subtle woven pattern */
+    #initial-loading::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(45deg, transparent 0 20px, rgba(139, 69, 19, 0.025) 20px 21px),
+        repeating-linear-gradient(-45deg, transparent 0 20px, rgba(240, 130, 40, 0.025) 20px 21px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Floating ornamental dots in corners */
+    #initial-loading::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 15% 20%, rgba(240, 130, 40, 0.12) 0, transparent 120px),
+        radial-gradient(circle at 85% 80%, rgba(139, 69, 19, 0.10) 0, transparent 140px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .loader-container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 2.75rem 3.25rem;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow:
+        0 12px 48px rgba(139, 69, 19, 0.12),
+        0 2px 6px rgba(43, 43, 43, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      min-width: 400px;
+      border: 1px solid rgba(139, 69, 19, 0.10);
+      animation: cardRise 0.8s cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+
+    @keyframes cardRise {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* ==========================================================================
+       LOADER 1 — Rotating Bead Ring around monogram
+       ========================================================================== */
+
+    .loader-logo-wrap {
+      position: relative;
+      width: 8.5rem;
+      height: 8.5rem;
+      margin: 0 auto 1.5rem auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Outer rotating bead ring (like traditional Kalenjin beadwork) */
+    .bead-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      animation: beadSpin 6s linear infinite;
+    }
+
+    .bead-ring span {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      margin: -5px 0 0 -5px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .bead-ring span:nth-child(1) {
+      transform: rotate(0deg) translateY(-4.25rem);
+      background: var(--accent);
+    }
+
+    .bead-ring span:nth-child(2) {
+      transform: rotate(45deg) translateY(-4.25rem);
+      background: var(--primary);
+    }
+
+    .bead-ring span:nth-child(3) {
+      transform: rotate(90deg) translateY(-4.25rem);
+      background: #d4691a;
+    }
+
+    .bead-ring span:nth-child(4) {
+      transform: rotate(135deg) translateY(-4.25rem);
+      background: var(--secondary);
+    }
+
+    .bead-ring span:nth-child(5) {
+      transform: rotate(180deg) translateY(-4.25rem);
+      background: var(--primary);
+    }
+
+    .bead-ring span:nth-child(6) {
+      transform: rotate(225deg) translateY(-4.25rem);
+      background: var(--accent);
+    }
+
+    .bead-ring span:nth-child(7) {
+      transform: rotate(270deg) translateY(-4.25rem);
+      background: #d4691a;
+    }
+
+    .bead-ring span:nth-child(8) {
+      transform: rotate(315deg) translateY(-4.25rem);
+      background: var(--secondary);
+    }
+
+    @keyframes beadSpin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Inner counter-rotating dashed ring */
+    .dash-ring {
+      position: absolute;
+      inset: 0.6rem;
+      border-radius: 50%;
+      border: 2px dashed rgba(139, 69, 19, 0.25);
+      animation: beadSpin 12s linear infinite reverse;
+    }
+
+    /* Square monogram (TUKEMA Museum brand) */
+    .loader-logo-square {
+      width: 5.5rem;
+      height: 5.5rem;
+      border-radius: 18px;
+      background: var(--gradient-brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 6px 20px rgba(139, 69, 19, 0.30),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      position: relative;
+      z-index: 2;
+      animation: logoBreathe 3s ease-in-out infinite;
+    }
+
+    .logo-square-inner {
+      display: flex;
+      align-items: baseline;
+    }
+
+    .logo-tukema {
+      font-family: var(--font-code);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.03em;
+    }
+
+    .logo-io {
+      font-family: var(--font-code);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.78);
+      margin-left: 1px;
+    }
+
+    @keyframes logoBreathe {
+
+      0%,
+      100% {
+        transform: scale(1);
+        box-shadow: 0 6px 20px rgba(139, 69, 19, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      }
+
+      50% {
+        transform: scale(1.04);
+        box-shadow: 0 10px 30px rgba(240, 130, 40, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.30);
+      }
+    }
+
+    /* ==========================================================================
+       TYPOGRAPHY IN LOADER
+       ========================================================================== */
+
+    .loading-message {
+      font-family: var(--font-heading);
+      font-size: 2.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: var(--color-heading);
+      margin-bottom: 0.25rem;
+    }
+
+    .loading-message .io-text {
+      color: var(--accent);
+      font-family: var(--font-code);
+      font-weight: 600;
+    }
+
+    .loading-subtitle {
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+    }
+
+    .loading-subtitle-small {
+      font-family: var(--font-ui);
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--color-text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* ==========================================================================
+       LOADER 2 — Animated Wave Bar (traditional rhythm)
+       ========================================================================== */
+
+    .loading-wave {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 5px;
+      height: 28px;
+      margin: 22px auto 0 auto;
+    }
+
+    .loading-wave span {
+      width: 5px;
+      height: 100%;
+      border-radius: 3px;
+      background: var(--gradient-accent);
+      transform-origin: bottom center;
+      animation: waveBar 1.3s ease-in-out infinite;
+      box-shadow: 0 1px 4px rgba(240, 130, 40, 0.35);
+    }
+
+    .loading-wave span:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .loading-wave span:nth-child(2) {
+      animation-delay: 0.1s;
+      background: linear-gradient(135deg, #F08228, #8B4513);
+    }
+
+    .loading-wave span:nth-child(3) {
+      animation-delay: 0.2s;
+      background: var(--gradient-primary);
+    }
+
+    .loading-wave span:nth-child(4) {
+      animation-delay: 0.3s;
+      background: linear-gradient(135deg, #8B4513, #2B2B2B);
+    }
+
+    .loading-wave span:nth-child(5) {
+      animation-delay: 0.4s;
+      background: var(--gradient-primary);
+    }
+
+    .loading-wave span:nth-child(6) {
+      animation-delay: 0.5s;
+      background: linear-gradient(135deg, #F08228, #8B4513);
+    }
+
+    .loading-wave span:nth-child(7) {
+      animation-delay: 0.6s;
+    }
+
+    @keyframes waveBar {
+
+      0%,
+      100% {
+        transform: scaleY(0.35);
+        opacity: 0.5;
+      }
+
+      50% {
+        transform: scaleY(1);
+        opacity: 1;
+      }
+    }
+
+    /* ==========================================================================
+       LOADER 3 — Progress Bar with shimmer sweep
+       ========================================================================== */
+
+    .progress-track {
+      width: 240px;
+      height: 6px;
+      background: rgba(139, 69, 19, 0.10);
+      border-radius: 4px;
+      margin: 22px auto 0 auto;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 1px 2px rgba(139, 69, 19, 0.08);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 45%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #8B4513, #F08228, #8B4513);
+      background-size: 200% auto;
+      animation:
+        progressMove 2s infinite ease-in-out,
+        shimmer 3s linear infinite;
+    }
+
+    @keyframes progressMove {
+      0% {
+        width: 15%;
+        margin-left: -5%;
+      }
+
+      50% {
+        width: 65%;
+        margin-left: 10%;
+      }
+
+      100% {
+        width: 40%;
+        margin-left: 70%;
+      }
+    }
+
+    @keyframes shimmer {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    /* ==========================================================================
+       LOADER 4 — Dot pulse (status text)
+       ========================================================================== */
+
+    .loading-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      letter-spacing: 0.02em;
+    }
+
+    .status-text {
+      display: inline-block;
+    }
+
+    .dot-pulse {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .dot-pulse span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
+      animation: dotPulse 1.4s infinite ease-in-out;
+      box-shadow: 0 0 6px rgba(240, 130, 40, 0.5);
+    }
+
+    .dot-pulse span:nth-child(2) {
+      animation-delay: 0.25s;
+      background: var(--primary);
+      box-shadow: 0 0 6px rgba(139, 69, 19, 0.5);
+    }
+
+    .dot-pulse span:nth-child(3) {
+      animation-delay: 0.5s;
+      background: var(--accent);
+      box-shadow: 0 0 6px rgba(240, 130, 40, 0.5);
+    }
+
+    @keyframes dotPulse {
+
+      0%,
+      80%,
+      100% {
+        opacity: 0.3;
+        transform: scale(0.7);
+      }
+
+      40% {
+        opacity: 1;
+        transform: scale(1.3);
+      }
+    }
+
+    /* ==========================================================================
+       LOADER 5 — Rotating arc spinner (top-right corner of logo)
+       ========================================================================== */
+
+    .arc-spinner {
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: var(--accent);
+      border-right-color: rgba(139, 69, 19, 0.4);
+      animation: beadSpin 1.8s linear infinite;
+      z-index: 3;
+    }
+
+    .arc-spinner-2 {
+      position: absolute;
+      inset: -12px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      border-bottom-color: var(--primary);
+      border-left-color: rgba(240, 130, 40, 0.3);
+      animation: beadSpin 3.2s linear infinite reverse;
+      z-index: 1;
+    }
+
+    /* ==========================================================================
+       LOADER FOOTER
+       ========================================================================== */
+
+    .loader-footer {
+      font-family: var(--font-ui);
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      margin-top: 22px;
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-transform: uppercase;
+    }
+
+    .loader-footer .footer-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
+      opacity: 0.7;
+    }
+
+    .loader-footer .footer-icon {
+      font-size: 0.9rem;
+    }
+
+    /* ==========================================================================
+       RESPONSIVE
+       ========================================================================== */
+
+    @media (max-width: 768px) {
+      .loader-container {
+        min-width: 320px;
+        padding: 2.25rem 1.75rem;
+      }
+
+      .loading-message {
+        font-size: 2.25rem;
+      }
+
+      .loader-logo-wrap {
+        width: 7rem;
+        height: 7rem;
+      }
+
+      .loader-logo-square {
+        width: 4.5rem;
+        height: 4.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .loader-container {
+        min-width: 280px;
+        padding: 1.75rem 1.25rem;
+        border-radius: 16px;
+      }
+
+      .loading-message {
+        font-size: 1.9rem;
+      }
+
+      .loading-subtitle {
+        font-size: 0.82rem;
+      }
+
+      .loading-subtitle-small {
+        font-size: 0.7rem;
+      }
+
+      .loader-logo-wrap {
+        width: 6rem;
+        height: 6rem;
+      }
+
+      .loader-logo-square {
+        width: 3.75rem;
+        height: 3.75rem;
+        border-radius: 14px;
+      }
+
+      .logo-tukema {
+        font-size: 1.05rem;
+      }
+
+      .logo-io {
+        font-size: 0.85rem;
+      }
+
+      .progress-track {
+        width: 190px;
+      }
+
+      .loading-wave {
+        height: 22px;
+      }
+
+      .loader-footer {
+        font-size: 0.65rem;
+        flex-wrap: wrap;
+      }
+    }
+
+    /* ==========================================================================
+       UTILITY / Vuetify overrides
+       ========================================================================== */
+
+    #app {
+      min-height: 100vh;
+    }
+
+    #loading-spinner {
+      display: none !important;
+    }
+
+    #pdf-canvas {
+      border: 1px solid black;
+      width: 100%;
+      height: auto;
+    }
+
+    #text-dialog {
+      display: none;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background: white;
+    }
+
+    .v-toolbar-title {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .v-dialog-title {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .v-chip {
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .v-tab,
+    .v-label {
+      font-family: var(--font-ui);
+    }
+
+    /* Theme helper classes */
+    .text-tukema-primary {
+      color: var(--primary) !important;
+    }
+
+    .text-tukema-accent {
+      color: var(--accent) !important;
+    }
+
+    .bg-tukema-primary {
+      background: var(--gradient-primary) !important;
+    }
+
+    .bg-tukema-accent {
+      background: var(--gradient-accent) !important;
+    }
+
+    .bg-tukema-brand {
+      background: var(--gradient-brand) !important;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+
+      .bead-ring,
+      .dash-ring,
+      .arc-spinner,
+      .arc-spinner-2,
+      .loader-logo-square,
+      .loading-wave span,
+      .progress-fill,
+      .dot-pulse span {
+        animation: none !important;
+      }
+
+      .progress-fill {
+        width: 45% !important;
+        margin-left: 0 !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ===== LOADING SCREEN — TUKEMA Museum (animated) ===== -->
+  <div id="initial-loading">
+    <div class="loader-container">
+
+      <!-- Animated logo cluster: bead ring + arc spinners + monogram -->
+      <div class="loader-logo-wrap">
+        <div class="bead-ring">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="dash-ring"></div>
+        <div class="arc-spinner"></div>
+        <div class="arc-spinner-2"></div>
+
+        <div class="loader-logo-square">
+          <div class="logo-square-inner">
+            <span class="logo-tukema">tukema</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Titles -->
+      <div class="loading-message">tukema</div>
+      <div class="loading-subtitle">Nairobi Epidemiology &amp; Biostatistics</div>
+      <div class="loading-subtitle-small">Methods Colloquium</div>
+
+      <!-- Loader 1: rhythmic wave bars -->
+      <div class="loading-wave" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </div>
+
+      <!-- Loader 2: shimmer progress bar -->
+      <div class="progress-track" role="progressbar" aria-label="Loading">
+        <div class="progress-fill"></div>
+      </div>
+
+      <!-- Loader 3: pulsing dots + status text -->
+      <div class="loading-status">
+        <span class="status-text">Loading workspace</span>
+        <div class="dot-pulse">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="loader-footer">
+        <span class="footer-icon">📊</span>
+        <span>Secure</span>
+        <span class="footer-dot"></span>
+        <span>Research-grade</span>
+        <span class="footer-dot"></span>
+        <span>Real-time insights</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VUE MOUNTING POINT ===== -->
+  <div id="app"></div>
+
+  <!-- ===== MAIN SCRIPT ===== -->
+  <script type="module" src="/src/main.ts"></script>
+
+  <!-- ===== LOADER TRANSITION SCRIPT ===== -->
+  <script>
+    let transitionCompleted = false;
+
+    function hideInitialLoader() {
+      if (transitionCompleted) return;
+      transitionCompleted = true;
+
+      const loaderElement = document.getElementById("initial-loading");
+      if (loaderElement) {
+        loaderElement.style.opacity = "0";
+        loaderElement.style.visibility = "hidden";
+        loaderElement.style.pointerEvents = "none";
+        setTimeout(() => {
+          if (loaderElement.parentNode) loaderElement.remove();
+        }, 600);
+      }
+      const oldSpinner = document.getElementById("loading-spinner");
+      if (oldSpinner) oldSpinner.style.display = "none";
+    }
+
+    const appContainer = document.getElementById("app");
+    if (appContainer) {
+      const observer = new MutationObserver((mutationsList, obs) => {
+        if (appContainer && appContainer.innerHTML.trim() !== "") {
+          hideInitialLoader();
+          obs.disconnect();
+        }
+      });
+
+      observer.observe(appContainer, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+
+      setTimeout(() => {
+        if (
+          appContainer &&
+          appContainer.innerHTML.trim() !== "" &&
+          !transitionCompleted
+        ) {
+          hideInitialLoader();
+          observer.disconnect();
+        }
+      }, 80);
+    } else {
+      console.warn("app container missing, fallback hide");
+      hideInitialLoader();
+    }
+
+    setTimeout(() => {
+      if (!transitionCompleted) hideInitialLoader();
+    }, 3000);
+
+    window.addEventListener("load", function () {
+      setTimeout(() => {
+        if (
+          !transitionCompleted &&
+          document.getElementById("app")?.innerHTML?.trim() !== ""
+        ) {
+          hideInitialLoader();
+        } else if (
+          !transitionCompleted &&
+          document.getElementById("app")?.innerHTML?.trim() === ""
+        ) {
+          setTimeout(() => {
+            if (!transitionCompleted) hideInitialLoader();
+          }, 400);
+        }
+      }, 200);
+    });
+
+    // Fallback: force-hide after 5s
+    setTimeout(() => {
+      if (!transitionCompleted) hideInitialLoader();
+    }, 5000);
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,211 @@
+{
+  "templates": [
+    {
+      "id": "template-1",
+      "name": "Customer Satisfaction Survey",
+      "description": "Measure customer satisfaction with your products or services",
+      "templateCategory": "Customer Feedback",
+      "tags": ["customer", "satisfaction", "feedback"],
+      "icon": "mdi-emoticon-happy",
+      "questions": [
+        {
+          "variableName": "overall_satisfaction",
+          "label": "Overall, how satisfied are you with our service?",
+          "type": "select_one",
+          "choices": [
+            { "name": "very_satisfied", "label": "Very Satisfied" },
+            { "name": "satisfied", "label": "Satisfied" },
+            { "name": "neutral", "label": "Neutral" },
+            { "name": "dissatisfied", "label": "Dissatisfied" },
+            { "name": "very_dissatisfied", "label": "Very Dissatisfied" }
+          ],
+          "required": true,
+          "order": 1
+        },
+        {
+          "variableName": "recommend",
+          "label": "How likely are you to recommend us to others?",
+          "type": "select_one",
+          "choices": [
+            { "name": "very_likely", "label": "Very Likely" },
+            { "name": "likely", "label": "Likely" },
+            { "name": "neutral", "label": "Neutral" },
+            { "name": "unlikely", "label": "Unlikely" },
+            { "name": "very_unlikely", "label": "Very Unlikely" }
+          ],
+          "required": true,
+          "order": 2
+        },
+        {
+          "variableName": "feedback",
+          "label": "Do you have any additional feedback?",
+          "type": "text",
+          "required": false,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "id": "template-2",
+      "name": "Employee Engagement Survey",
+      "description": "Measure employee engagement and job satisfaction",
+      "templateCategory": "HR & People",
+      "tags": ["employee", "engagement", "hr"],
+      "icon": "mdi-account-group",
+      "questions": [
+        {
+          "variableName": "job_satisfaction",
+          "label": "How satisfied are you with your current role?",
+          "type": "select_one",
+          "choices": [
+            { "name": "very_satisfied", "label": "Very Satisfied" },
+            { "name": "satisfied", "label": "Satisfied" },
+            { "name": "neutral", "label": "Neutral" },
+            { "name": "dissatisfied", "label": "Dissatisfied" },
+            { "name": "very_dissatisfied", "label": "Very Dissatisfied" }
+          ],
+          "required": true,
+          "order": 1
+        },
+        {
+          "variableName": "company_culture",
+          "label": "How would you rate our company culture?",
+          "type": "select_one",
+          "choices": [
+            { "name": "excellent", "label": "Excellent" },
+            { "name": "good", "label": "Good" },
+            { "name": "average", "label": "Average" },
+            { "name": "poor", "label": "Poor" },
+            { "name": "very_poor", "label": "Very Poor" }
+          ],
+          "required": true,
+          "order": 2
+        },
+        {
+          "variableName": "growth_opportunities",
+          "label": "I see growth opportunities at this company",
+          "type": "select_one",
+          "choices": [
+            { "name": "strongly_agree", "label": "Strongly Agree" },
+            { "name": "agree", "label": "Agree" },
+            { "name": "neutral", "label": "Neutral" },
+            { "name": "disagree", "label": "Disagree" },
+            { "name": "strongly_disagree", "label": "Strongly Disagree" }
+          ],
+          "required": true,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "id": "template-3",
+      "name": "Event Registration Form",
+      "description": "Register participants for events and conferences",
+      "templateCategory": "Events",
+      "tags": ["event", "registration", "signup"],
+      "icon": "mdi-calendar-check",
+      "questions": [
+        {
+          "variableName": "full_name",
+          "label": "Full Name",
+          "type": "text",
+          "required": true,
+          "order": 1
+        },
+        {
+          "variableName": "email",
+          "label": "Email Address",
+          "type": "text",
+          "required": true,
+          "order": 2
+        },
+        {
+          "variableName": "organization",
+          "label": "Organization/Company",
+          "type": "text",
+          "required": false,
+          "order": 3
+        },
+        {
+          "variableName": "dietary_restrictions",
+          "label": "Do you have any dietary restrictions?",
+          "type": "select_multiple",
+          "choices": [
+            { "name": "vegetarian", "label": "Vegetarian" },
+            { "name": "vegan", "label": "Vegan" },
+            { "name": "gluten_free", "label": "Gluten Free" },
+            { "name": "halal", "label": "Halal" },
+            { "name": "kosher", "label": "Kosher" },
+            { "name": "none", "label": "No restrictions" }
+          ],
+          "required": false,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "id": "template-4",
+      "name": "Health Assessment Survey",
+      "description": "Collect health information and symptoms",
+      "templateCategory": "Healthcare",
+      "tags": ["health", "medical", "assessment"],
+      "icon": "mdi-hospital",
+      "questions": [
+        {
+          "variableName": "age_range",
+          "label": "Age Range",
+          "type": "select_one",
+          "choices": [
+            { "name": "under_18", "label": "Under 18" },
+            { "name": "18_30", "label": "18-30" },
+            { "name": "31_50", "label": "31-50" },
+            { "name": "51_70", "label": "51-70" },
+            { "name": "over_70", "label": "Over 70" }
+          ],
+          "required": true,
+          "order": 1
+        },
+        {
+          "variableName": "symptoms",
+          "label": "Please select any symptoms you are experiencing",
+          "type": "select_multiple",
+          "choices": [
+            { "name": "fever", "label": "Fever" },
+            { "name": "cough", "label": "Cough" },
+            { "name": "fatigue", "label": "Fatigue" },
+            { "name": "headache", "label": "Headache" },
+            { "name": "none", "label": "None" }
+          ],
+          "required": true,
+          "order": 2
+        }
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "id": "customer_feedback",
+      "name": "Customer Feedback",
+      "description": "Gather insights from customers",
+      "icon": "mdi-chart-line"
+    },
+    {
+      "id": "hr_people",
+      "name": "HR & People",
+      "description": "Employee and HR-related surveys",
+      "icon": "mdi-account-group"
+    },
+    {
+      "id": "events",
+      "name": "Events",
+      "description": "Event registration and feedback",
+      "icon": "mdi-calendar-check"
+    },
+    {
+      "id": "healthcare",
+      "name": "Healthcare",
+      "description": "Health assessments and medical surveys",
+      "icon": "mdi-hospital"
+    }
+  ]
+}

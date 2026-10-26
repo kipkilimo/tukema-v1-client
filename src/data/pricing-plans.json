@@ -1,0 +1,266 @@
+{
+  "plans": [
+    {
+      "id": "basic_on_the_go",
+      "name": "Basic / On The Go",
+      "tier": "starter",
+      "icon": "mdi-rocket",
+      "color": "#2EBD85",
+      "badge": null,
+      "billingPeriod": "pay_per_deployment",
+      "pricePerDeployment": 1.5,
+      "currency": "USD",
+      "features": [
+        {
+          "name": "Pay per deployment",
+          "included": true,
+          "description": "Only pay when you deploy a survey"
+        },
+        {
+          "name": "KoboCollect Integration",
+          "included": true,
+          "description": "Full KoboCollect API access"
+        },
+        {
+          "name": "Offline Data Collection",
+          "included": true,
+          "description": "GPS, Photo capture, offline sync"
+        },
+        {
+          "name": "Real-time Dashboard",
+          "included": true,
+          "description": "Live WebSocket updates"
+        },
+        {
+          "name": "XLSForm Upload",
+          "included": true,
+          "description": "Upload XLSX/CSV/JSON files"
+        },
+        {
+          "name": "Email Support",
+          "included": true,
+          "description": "48-hour response time"
+        },
+        {
+          "name": "QR Code Generation",
+          "included": true,
+          "description": "Branded QR codes for field teams"
+        },
+        {
+          "name": "Response Export",
+          "included": true,
+          "description": "Excel, CSV, JSON formats"
+        },
+        {
+          "name": "Team Members",
+          "included": false,
+          "limit": "1 user",
+          "description": "Single user account"
+        },
+        {
+          "name": "API Access",
+          "included": false,
+          "description": "REST & GraphQL API"
+        },
+        {
+          "name": "Webhook Integration",
+          "included": false,
+          "description": "Custom webhooks"
+        }
+      ],
+      "suitableFor": [
+        "Individual researchers",
+        "Small-scale surveys",
+        "Occasional data collection",
+        "Field testers"
+      ],
+      "ctaText": "Deploy First Survey"
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise",
+      "tier": "professional",
+      "icon": "mdi-office-building",
+      "color": "#5E60CE",
+      "badge": "Most Popular",
+      "billingPeriod": "yearly",
+      "priceYearly": 4999,
+      "priceMonthly": 499,
+      "currency": "USD",
+      "includedDeployments": 500,
+      "features": [
+        {
+          "name": "500 Yearly Deployments",
+          "included": true,
+          "description": "500 survey deployments per year included"
+        },
+        {
+          "name": "KoboCollect Integration",
+          "included": true,
+          "description": "Full KoboCollect API access"
+        },
+        {
+          "name": "Offline Data Collection",
+          "included": true,
+          "description": "GPS, Photo capture, offline sync"
+        },
+        {
+          "name": "Real-time Dashboard",
+          "included": true,
+          "description": "Live WebSocket updates"
+        },
+        {
+          "name": "Priority Support",
+          "included": true,
+          "description": "24/7 priority email & chat support"
+        },
+        {
+          "name": "QR Code Generation",
+          "included": true,
+          "description": "Branded QR codes for field teams"
+        },
+        {
+          "name": "Unlimited Team Members",
+          "included": true,
+          "description": "Add unlimited team members"
+        },
+        {
+          "name": "Full API Access",
+          "included": true,
+          "description": "REST & GraphQL API"
+        },
+        {
+          "name": "White-label Dashboard",
+          "included": true,
+          "description": "Custom branding"
+        },
+        {
+          "name": "SLA Guarantee",
+          "included": true,
+          "description": "99.9% uptime SLA"
+        },
+        {
+          "name": "SSO Integration",
+          "included": true,
+          "description": "SAML/OAuth SSO"
+        }
+      ],
+      "suitableFor": [
+        "Large NGOs",
+        "Government agencies",
+        "Research institutions",
+        "Enterprise organizations"
+      ],
+      "ctaText": "Contact Sales"
+    },
+    {
+      "id": "custom",
+      "name": "Custom",
+      "tier": "enterprise",
+      "icon": "mdi-cog",
+      "color": "#3B82F6",
+      "badge": "Tailored",
+      "billingPeriod": "flexible",
+      "currency": "USD",
+      "features": [
+        {
+          "name": "Flexible Deployment Pricing",
+          "included": true,
+          "description": "Volume-based discounts"
+        },
+        {
+          "name": "Custom Integration",
+          "included": true,
+          "description": "Connect to your existing systems"
+        },
+        {
+          "name": "KoboCollect Integration",
+          "included": true,
+          "description": "Full KoboCollect API access"
+        },
+        {
+          "name": "On-premise Deployment",
+          "included": true,
+          "description": "Self-hosted option available"
+        },
+        {
+          "name": "Custom Feature Development",
+          "included": true,
+          "description": "Build features you need"
+        },
+        {
+          "name": "Training & Onboarding",
+          "included": true,
+          "description": "Team training sessions"
+        }
+      ],
+      "suitableFor": [
+        "Large-scale operations",
+        "Specialized requirements",
+        "Long-term partnerships",
+        "Government contracts"
+      ],
+      "ctaText": "Schedule a Call"
+    }
+  ],
+  "addOns": [
+    {
+      "id": "additional_deployment",
+      "name": "Additional Deployment",
+      "price": 1.5,
+      "unit": "per deployment",
+      "description": "For Basic plan users needing more deployments",
+      "icon": "mdi-plus-circle"
+    },
+    {
+      "id": "priority_support",
+      "name": "Priority Support",
+      "price": 299,
+      "unit": "per year",
+      "description": "24/7 priority support with 2-hour response",
+      "icon": "mdi-headset"
+    },
+    {
+      "id": "white_label",
+      "name": "White Label",
+      "price": 999,
+      "unit": "per year",
+      "description": "Remove tukema branding",
+      "icon": "mdi-format-paint"
+    },
+    {
+      "id": "advanced_analytics",
+      "name": "Advanced Analytics",
+      "price": 499,
+      "unit": "per year",
+      "description": "AI-powered insights and predictions",
+      "icon": "mdi-chart-line"
+    }
+  ],
+  "faq": [
+    {
+      "question": "What happens if I exceed my included deployments?",
+      "answer": "Enterprise plan includes 500 deployments. Additional deployments are billed at $0.50 each. Basic plan is pay-per-deployment, so no overage fees."
+    },
+    {
+      "question": "Can I switch between plans?",
+      "answer": "Yes, you can upgrade or downgrade at any time. Changes take effect at the next billing cycle."
+    },
+    {
+      "question": "Is there a free trial?",
+      "answer": "Yes, we offer aTrack support ticketson all plans with full feature access."
+    },
+    {
+      "question": "Do you offer discounts for non-profits?",
+      "answer": "Yes, we offer 30% discount for registered NGOs and non-profit organizations."
+    },
+    {
+      "question": "What payment methods do you accept?",
+      "answer": "We accept all major credit cards, PayPal, and wire transfers for enterprise plans."
+    },
+    {
+      "question": "Is KoboCollect integration included in all plans?",
+      "answer": "Yes, all plans include full KoboCollect integration, offline data collection, and real-time syncing."
+    }
+  ]
+}

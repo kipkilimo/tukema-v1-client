@@ -1,0 +1,78 @@
+// stores/user/constants.ts
+export const COOLDOWN_DURATION = 60;
+export const MIN_PASSWORD_LENGTH = 8;
+
+export const STORAGE_KEYS = {
+  USER: "user",
+  MFA_TOKEN: "mfaToken",
+  LAST_OTP_REQUEST: "lastOTPRequest",
+  REFRESH_TOKEN: "refreshToken",
+} as const;
+
+export const PLAN_LIMITS_CONFIG = {
+  FREE: {
+    maxSurveys: 1,
+    maxResponses: 1000,
+    maxFileSizeMB: 5,
+    maxTeamMembers: 1,
+    maxAPIRequestsPerDay: 100,
+    allowKoboDeployment: false,
+    allowAPIExport: false,
+    prioritySupport: false,
+    customBranding: false,
+    advancedAnalytics: false,
+    webhookSupport: false,
+  },
+  STARTER: {
+    maxSurveys: 5,
+    maxResponses: 10000,
+    maxFileSizeMB: 10,
+    maxTeamMembers: 5,
+    maxAPIRequestsPerDay: 1000,
+    allowKoboDeployment: false,
+    allowAPIExport: true,
+    prioritySupport: false,
+    customBranding: false,
+    advancedAnalytics: false,
+    webhookSupport: false,
+  },
+  PRO: {
+    maxSurveys: 20,
+    maxResponses: 50000,
+    maxFileSizeMB: 50,
+    maxTeamMembers: 20,
+    maxAPIRequestsPerDay: 5000,
+    allowKoboDeployment: true,
+    allowAPIExport: true,
+    prioritySupport: false,
+    customBranding: true,
+    advancedAnalytics: true,
+    webhookSupport: true,
+  },
+  BUSINESS: {
+    maxSurveys: 50,
+    maxResponses: 200000,
+    maxFileSizeMB: 100,
+    maxTeamMembers: 50,
+    maxAPIRequestsPerDay: 10000,
+    allowKoboDeployment: true,
+    allowAPIExport: true,
+    prioritySupport: true,
+    customBranding: true,
+    advancedAnalytics: true,
+    webhookSupport: true,
+  },
+  ENTERPRISE: {
+    maxSurveys: -1,
+    maxResponses: -1,
+    maxFileSizeMB: 500,
+    maxTeamMembers: -1,
+    maxAPIRequestsPerDay: -1,
+    allowKoboDeployment: true,
+    allowAPIExport: true,
+    prioritySupport: true,
+    customBranding: true,
+    advancedAnalytics: true,
+    webhookSupport: true,
+  },
+} as const;

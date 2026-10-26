@@ -1,0 +1,211 @@
+app:
+  name: tukema
+  tagline: Preservar • Explorar • Conectar
+
+nav:
+  dashboard: Panel
+  collections: Colecciones
+  artefacts: Artefactos
+  galleries: Galerías
+  exhibits: Exposiciones
+  stories: Historias orales
+  learning: Aprendizaje
+  events: Eventos
+  community: Comunidad
+  second-messenger: Second Messenger
+  account: Mi cuenta
+  administration: Administración
+  settings: Configuración
+  searchPlaceholder: Buscar artefactos, colecciones, historias...
+
+dashboard:
+  title: Panel
+  welcome: Bienvenido de nuevo
+  featuredArtefacts: Artefactos destacados
+  recentAdditions: Añadidos recientes
+  upcomingEvents: Próximos eventos
+  announcements: Anuncios
+
+artefacts:
+  title: Artefactos
+  browse: Explorar artefactos
+  upload: Añadir artefacto
+  edit: Editar artefacto
+  delete: Eliminar artefacto
+  preview: Vista previa
+  download: Descargar
+  share: Compartir
+  bookmark: Añadir a favoritos
+
+  # NUEVO — alineado con el inglés
+  status: Estado
+  publish: Publicar
+  archive: Archivar
+  loadMore: Cargar más
+  dialogActions: Acciones de diálogo
+  noDescription: Sin descripción
+  confirmDelete: "¿Eliminar «{title}»? Esta acción no se puede deshacer."
+
+  danger:
+    title: Zona peligrosa
+    message: Acciones destructivas — permanentes e irreversibles.
+    clearList: Vaciar lista
+    clearListHint: Vaciar caché de la lista
+    resetStore: Reiniciar el almacén
+    resetStoreHint: Reiniciar el almacén
+    confirmReset: ¿Reiniciar el almacén de artefactos? Se borrarán todos los datos en caché.
+
+  fields:
+    title: Título
+    description: Descripción
+    creator: Creador / Artesano
+    culture: Cultura / Comunidad
+    origin: Lugar de origen
+    period: Período / Época
+    category: Categoría
+    material: Material
+    dimensions: Dimensiones
+    provenance: Procedencia
+    condition: Estado
+    accessionNumber: Número de inventario
+    tags: Etiquetas
+    language: Idioma
+
+  categories:
+    sculpture: Escultura
+    textile: Textil
+    jewelry: Joyería
+    pottery: Alfarería
+    painting: Pintura
+    carving: Tallado en madera
+    beadwork: Trabajo con abalorios
+    metalwork: Orfebrería
+    manuscript: Manuscrito
+    musicalInstrument: Instrumento musical
+    ritualObject: Objeto ritual
+    other: Otro
+
+collections:
+  title: Colecciones
+  browse: Explorar colecciones
+  curated: Colecciones curadas
+  featured: Colecciones destacadas
+  thematic: Colecciones temáticas
+  regional: Colecciones regionales
+
+galleries:
+  title: Galerías
+  browse: Explorar galerías
+  virtual: Galerías virtuales
+  permanent: Galerías permanentes
+  temporary: Exposiciones temporales
+
+exhibits:
+  title: Exposiciones
+  browse: Explorar exposiciones
+  current: Exposiciones actuales
+  upcoming: Próximas exposiciones
+  past: Exposiciones pasadas
+  guided: Visitas guiadas
+
+stories:
+  title: Historias orales
+  browse: Explorar historias
+  tellers: Narradores
+  transcripts: Transcripciones
+  recordings: Grabaciones
+  highlights: Momentos destacados
+
+learning:
+  title: Aprendizaje
+  browse: Explorar aprendizaje
+  modules: Módulos de aprendizaje
+  lessonPlans: Planes de lección
+  activities: Actividades
+  resources: Recursos educativos
+
+events:
+  title: Eventos
+  exhibitions: Exposiciones
+  talks: Charlas y conferencias
+  workshops: Talleres
+  festivals: Festivales culturales
+  tours: Visitas guiadas
+
+community:
+  title: Comunidad
+  members: Miembros
+  discussions: Debates
+  announcements: Anuncios
+  contributors: Colaboradores
+
+account:
+  profile: Perfil
+  preferences: Preferencias
+  language: Idioma
+  notifications: Notificaciones
+  security: Seguridad
+  logout: Cerrar sesión
+
+admin:
+  title: Administración
+  users: Usuarios
+  organizations: Organizaciones
+  permissions: Permisos
+  settings: Configuración del sistema
+
+stats:
+  artefacts: Artefactos
+  collections: Colecciones
+  exhibits: Exposiciones
+  stories: Historias orales
+  members: Miembros
+  views: Vistas
+  discussions: Debates
+  saving: Guardando
+
+common:
+  create: Crear
+  upload: Subir
+  save: Guardar
+  edit: Editar
+  delete: Eliminar
+  view: Ver
+  preview: Vista previa
+  download: Descargar
+  share: Compartir
+  search: Buscar
+  filter: Filtrar
+  sort: Ordenar
+  refresh: Actualizar
+  back: Atrás
+  next: Siguiente
+  close: Cerrar
+  cancel: Cancelar
+  submit: Enviar
+  loading: Cargando...
+  success: Éxito
+  error: Error
+  warning: Advertencia
+  noData: No hay datos disponibles
+  all: Todos
+  none: Ninguno
+  retry: Reintentar
+  status: Estado
+  actions: Acciones
+
+time:
+  today: Hoy
+  yesterday: Ayer
+  thisWeek: Esta semana
+  thisMonth: Este mes
+  thisYear: Este año
+  justNow: Ahora mismo
+
+locale:
+  english: English
+  spanish: Español
+  french: Français
+  arabic: العربية
+  amharic: አማርኛ
+  switchTo: Cambiar idioma

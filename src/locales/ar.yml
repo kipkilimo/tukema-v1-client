@@ -1,0 +1,211 @@
+app:
+  name: tukema
+  tagline: حِفاظ • استكشاف • تواصل
+
+nav:
+  dashboard: لوحة التحكم
+  collections: المجموعات
+  artefacts: القطع الأثرية
+  galleries: المعارض
+  exhibits: العروض
+  stories: الروايات الشفهية
+  learning: التعلّم
+  events: الفعاليات
+  community: المجتمع
+  second-messenger: Second Messenger
+  account: حسابي
+  administration: الإدارة
+  settings: الإعدادات
+  searchPlaceholder: ابحث عن قطع أثرية، مجموعات، روايات...
+
+dashboard:
+  title: لوحة التحكم
+  welcome: مرحبًا بعودتك
+  featuredArtefacts: قطع أثرية مميّزة
+  recentAdditions: إضافات حديثة
+  upcomingEvents: فعاليات قادمة
+  announcements: إعلانات
+
+artefacts:
+  title: القطع الأثرية
+  browse: تصفّح القطع الأثرية
+  upload: إضافة قطعة أثرية
+  edit: تعديل القطعة الأثرية
+  delete: حذف القطعة الأثرية
+  preview: معاينة
+  download: تنزيل
+  share: مشاركة
+  bookmark: إضافة إلى المفضّلة
+
+  # جديد — متوافق مع النسخة الإنجليزية
+  status: الحالة
+  publish: نشر
+  archive: أرشفة
+  loadMore: تحميل المزيد
+  dialogActions: إجراءات الحوار
+  noDescription: لا يوجد وصف
+  confirmDelete: 'هل تريد حذف "{title}"؟ لا يمكن التراجع عن هذا الإجراء.'
+
+  danger:
+    title: منطقة الخطر
+    message: إجراءات مدمّرة — دائمة ولا يمكن التراجع عنها.
+    clearList: مسح القائمة
+    clearListHint: مسح ذاكرة القائمة المؤقتة
+    resetStore: إعادة تعيين المخزن
+    resetStoreHint: إعادة تعيين المخزن
+    confirmReset: هل تريد إعادة تعيين مخزن القطع الأثرية؟ سيتم مسح جميع البيانات المخزنة مؤقتًا.
+
+  fields:
+    title: العنوان
+    description: الوصف
+    creator: الصانع / المنشئ
+    culture: الثقافة / المجتمع
+    origin: مكان الأصل
+    period: الفترة / الحقبة
+    category: الفئة
+    material: المادة
+    dimensions: الأبعاد
+    provenance: المصدر
+    condition: الحالة
+    accessionNumber: رقم الجرد
+    tags: الوسوم
+    language: اللغة
+
+  categories:
+    sculpture: النحت
+    textile: المنسوجات
+    jewelry: المجوهرات
+    pottery: الفخّار
+    painting: الرسم
+    carving: النقش على الخشب
+    beadwork: أعمال الخرز
+    metalwork: الأشغال المعدنية
+    manuscript: المخطوطات
+    musicalInstrument: الآلات الموسيقية
+    ritualObject: الأدوات الطقسية
+    other: أخرى
+
+collections:
+  title: المجموعات
+  browse: تصفّح المجموعات
+  curated: مجموعات مُنسّقة
+  featured: مجموعات مميّزة
+  thematic: مجموعات موضوعية
+  regional: مجموعات إقليمية
+
+galleries:
+  title: المعارض
+  browse: تصفّح المعارض
+  virtual: معارض افتراضية
+  permanent: معارض دائمة
+  temporary: معارض مؤقتة
+
+exhibits:
+  title: العروض
+  browse: تصفّح العروض
+  current: عروض جارية
+  upcoming: عروض قادمة
+  past: عروض سابقة
+  guided: جولات مرشدة
+
+stories:
+  title: الروايات الشفهية
+  browse: تصفّح الروايات
+  tellers: الرواة
+  transcripts: النصوص المكتوبة
+  recordings: التسجيلات
+  highlights: أبرز اللحظات
+
+learning:
+  title: التعلّم
+  browse: تصفّح مواد التعلّم
+  modules: وحدات التعلّم
+  lessonPlans: خطط الدروس
+  activities: الأنشطة
+  resources: الموارد التعليمية
+
+events:
+  title: الفعاليات
+  exhibitions: المعارض
+  talks: المحاضرات والندوات
+  workshops: ورش العمل
+  festivals: المهرجانات الثقافية
+  tours: الجولات المرشدة
+
+community:
+  title: المجتمع
+  members: الأعضاء
+  discussions: المناقشات
+  announcements: الإعلانات
+  contributors: المساهمون
+
+account:
+  profile: الملف الشخصي
+  preferences: التفضيلات
+  language: اللغة
+  notifications: الإشعارات
+  security: الأمان
+  logout: تسجيل الخروج
+
+admin:
+  title: الإدارة
+  users: المستخدمون
+  organizations: المؤسسات
+  permissions: الأذونات
+  settings: إعدادات النظام
+
+stats:
+  artefacts: القطع الأثرية
+  collections: المجموعات
+  exhibits: العروض
+  stories: الروايات الشفهية
+  members: الأعضاء
+  views: المشاهدات
+  discussions: المناقشات
+  saving: جارٍ الحفظ
+
+common:
+  create: إنشاء
+  upload: رفع
+  save: حفظ
+  edit: تعديل
+  delete: حذف
+  view: عرض
+  preview: معاينة
+  download: تنزيل
+  share: مشاركة
+  search: بحث
+  filter: تصفية
+  sort: ترتيب
+  refresh: تحديث
+  back: رجوع
+  next: التالي
+  close: إغلاق
+  cancel: إلغاء
+  submit: إرسال
+  loading: جارٍ التحميل...
+  success: نجاح
+  error: خطأ
+  warning: تحذير
+  noData: لا توجد بيانات متاحة
+  all: الكل
+  none: لا شيء
+  retry: إعادة المحاولة
+  status: الحالة
+  actions: الإجراءات
+
+time:
+  today: اليوم
+  yesterday: أمس
+  thisWeek: هذا الأسبوع
+  thisMonth: هذا الشهر
+  thisYear: هذه السنة
+  justNow: الآن
+
+locale:
+  english: English
+  spanish: Español
+  french: Français
+  arabic: العربية
+  amharic: አማርኛ
+  switchTo: تغيير اللغة

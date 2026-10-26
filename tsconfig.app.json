@@ -1,0 +1,96 @@
+{
+  "include": [
+    "env.d.ts",
+    "auto-imports.d.ts",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "src/**/*.d.ts"
+  ],
+  "exclude": ["src/**/__tests__/*", "node_modules", "dist", "coverage"],
+  "compilerOptions": {
+    // Language and Environment
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "preserve",
+    "useDefineForClassFields": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    // Modules
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "resolveJsonModule": true,
+    "allowArbitraryExtensions": true,
+    "allowImportingTsExtensions": true,
+
+    // Output
+    "noEmit": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+
+    // Interop Constraints
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": false,
+
+    // Type Checking - Strict
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "exactOptionalPropertyTypes": false,
+    "alwaysStrict": true,
+
+    // Completeness
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+
+    // Other Options
+    "composite": false,
+    "incremental": false,
+    "allowJs": false,
+    "checkJs": false,
+    "sourceMap": false,
+    "declaration": false,
+    "declarationMap": false,
+
+    // Paths and Base
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "#/*": ["./src/types/*"],
+      "~/*": ["./*"]
+    },
+
+    // Types
+    "types": [
+      "vite/client",
+      "vitest/globals",
+      "vue/ref-macros",
+      "unplugin-vue-router/client"
+    ]
+  },
+
+  // Project references for better performance
+  "references": [{ "path": "./tsconfig.node.json" }],
+
+  // Vue specific
+  "vueCompilerOptions": {
+    "target": 3,
+    "strictTemplates": true,
+    "experimentalRuntimeMode": "runtime-dom"
+  }
+}

@@ -1,0 +1,211 @@
+app:
+  name: tukema
+  tagline: ጠብቅ • አስስ • አገናኝ
+
+nav:
+  dashboard: ዳሽቦርድ
+  collections: ስብስቦች
+  artefacts: ቅርሶች
+  galleries: ጋለሪዎች
+  exhibits: ኤግዚቢሽኖች
+  stories: የቃል ታሪኮች
+  learning: ትምህርት
+  events: ዝግጅቶች
+  community: ማህበረሰብ
+  second-messenger: Second Messenger
+  account: የእኔ መለያ
+  administration: አስተዳደር
+  settings: ቅንብሮች
+  searchPlaceholder: ቅርሶች፣ ስብስቦች፣ ታሪኮች ይፈልጉ...
+
+dashboard:
+  title: ዳሽቦርድ
+  welcome: እንኳን ደህና ተመለሱ
+  featuredArtefacts: የተመረጡ ቅርሶች
+  recentAdditions: አዲስ የተጨመሩ
+  upcomingEvents: መጪ ዝግጅቶች
+  announcements: ማስታወቂያዎች
+
+artefacts:
+  title: ቅርሶች
+  browse: ቅርሶችን ያስሱ
+  upload: ቅርስ ይጨምሩ
+  edit: ቅርሱን ያስተካክሉ
+  delete: ቅርሱን ይሰርዙ
+  preview: ቅድመ እይታ
+  download: ያውርዱ
+  share: ያጋሩ
+  bookmark: ወደ ተወዳጆች ይጨምሩ
+
+  # አዲስ — ከእንግሊዝኛው ጋር ተጣጥሟል
+  status: ሁኔታ
+  publish: አትም
+  archive: አስቀምጥ
+  loadMore: ተጨማሪ ጫን
+  dialogActions: የንግግር እርምጃዎች
+  noDescription: መግለጫ የለም
+  confirmDelete: '"{title}" ይሰረዝ? ይህ እርምጃ መመለስ አይቻልም።'
+
+  danger:
+    title: አደገኛ አካባቢ
+    message: አጥፊ እርምጃዎች — ቋሚ እና መመለስ አይቻልም።
+    clearList: ዝርዝር አጽዳ
+    clearListHint: የዝርዝር መሸጎጫ አጽዳ
+    resetStore: ማከማቻ ዳግም አስጀምር
+    resetStoreHint: ማከማቻ ዳግም አስጀምር
+    confirmReset: የቅርስ ማከማቻው ዳግም ይጀመር? ሁሉም የመሸጎጫ ውሂብ ይጠፋል።
+
+  fields:
+    title: ርዕስ
+    description: መግለጫ
+    creator: ፈጣሪ / የሠራው ሰው
+    culture: ባህል / ማህበረሰብ
+    origin: የመነሻ ቦታ
+    period: ዘመን / ወቅት
+    category: ምድብ
+    material: ቁሳቁስ
+    dimensions: ልኬቶች
+    provenance: ምንጭ
+    condition: ሁኔታ
+    accessionNumber: የኢንቬንቶሪ ቁጥር
+    tags: መለያዎች
+    language: ቋንቋ
+
+  categories:
+    sculpture: ቅርጻ ቅርጽ
+    textile: ጨርቃ ጨርቅ
+    jewelry: ጌጣጌጥ
+    pottery: ሸክላ
+    painting: ሥዕል
+    carving: የእንጨት ቅርጻ ቅርጽ
+    beadwork: የዶቃ ሥራ
+    metalwork: የብረት ሥራ
+    manuscript: የእጅ ጽሑፍ
+    musicalInstrument: የሙዚቃ መሣሪያ
+    ritualObject: የአምልኮ ዕቃ
+    other: ሌላ
+
+collections:
+  title: ስብስቦች
+  browse: ስብስቦችን ያስሱ
+  curated: የተዘጋጁ ስብስቦች
+  featured: የተመረጡ ስብስቦች
+  thematic: ጭብጥ ስብስቦች
+  regional: ክልላዊ ስብስቦች
+
+galleries:
+  title: ጋለሪዎች
+  browse: ጋለሪዎችን ያስሱ
+  virtual: ምናባዊ ጋለሪዎች
+  permanent: ቋሚ ጋለሪዎች
+  temporary: ጊዜያዊ ኤግዚቢሽኖች
+
+exhibits:
+  title: ኤግዚቢሽኖች
+  browse: ኤግዚቢሽኖችን ያስሱ
+  current: አሁን ያሉ ኤግዚቢሽኖች
+  upcoming: መጪ ኤግዚቢሽኖች
+  past: ያለፉ ኤግዚቢሽኖች
+  guided: በመመሪያ የተደረጉ ጉብኝቶች
+
+stories:
+  title: የቃል ታሪኮች
+  browse: ታሪኮችን ያስሱ
+  tellers: ተራኪዎች
+  transcripts: የጽሑፍ ቅጂዎች
+  recordings: ቀረጻዎች
+  highlights: ዋና ዋና ነጥቦች
+
+learning:
+  title: ትምህርት
+  browse: የትምህርት አማራጮችን ያስሱ
+  modules: የትምህርት ሞጁሎች
+  lessonPlans: የትምህርት እቅዶች
+  activities: እንቅስቃሴዎች
+  resources: የትምህርት ሀብቶች
+
+events:
+  title: ዝግጅቶች
+  exhibitions: ኤግዚቢሽኖች
+  talks: ንግግሮች እና ስብሰባዎች
+  workshops: ወርክሾፖች
+  festivals: የባህል ፌስቲቫሎች
+  tours: በመመሪያ የተደረጉ ጉብኝቶች
+
+community:
+  title: ማህበረሰብ
+  members: አባላት
+  discussions: ውይይቶች
+  announcements: ማስታወቂያዎች
+  contributors: አስተዋጽኦ አድራጊዎች
+
+account:
+  profile: መገለጫ
+  preferences: ምርጫዎች
+  language: ቋንቋ
+  notifications: ማሳወቂያዎች
+  security: ደህንነት
+  logout: ውጣ
+
+admin:
+  title: አስተዳደር
+  users: ተጠቃሚዎች
+  organizations: ድርጅቶች
+  permissions: ፈቃዶች
+  settings: የስርዓት ቅንብሮች
+
+stats:
+  artefacts: ቅርሶች
+  collections: ስብስቦች
+  exhibits: ኤግዚቢሽኖች
+  stories: የቃል ታሪኮች
+  members: አባላት
+  views: እይታዎች
+  discussions: ውይይቶች
+  saving: በመቀመጥ ላይ
+
+common:
+  create: ፍጠር
+  upload: ጫን
+  save: አስቀምጥ
+  edit: አስተካክል
+  delete: ሰርዝ
+  view: ተመልከት
+  preview: ቅድመ እይታ
+  download: አውርድ
+  share: አጋራ
+  search: ፈልግ
+  filter: አጣራ
+  sort: ደርድር
+  refresh: አድስ
+  back: ተመለስ
+  next: ቀጣይ
+  close: ዝጋ
+  cancel: ሰርዝ
+  submit: አስገባ
+  loading: በመጫን ላይ...
+  success: ተሳክቷል
+  error: ስህተት
+  warning: ማስጠንቀቂያ
+  noData: ምንም ውሂብ የለም
+  all: ሁሉም
+  none: ምንም
+  retry: እንደገና ሞክር
+  status: ሁኔታ
+  actions: እርምጃዎች
+
+time:
+  today: ዛሬ
+  yesterday: ትናንት
+  thisWeek: በዚህ ሳምንት
+  thisMonth: በዚህ ወር
+  thisYear: በዚህ ዓመት
+  justNow: አሁን
+
+locale:
+  english: English
+  spanish: Español
+  french: Français
+  arabic: العربية
+  amharic: አማርኛ
+  switchTo: ቋንቋ ቀይር

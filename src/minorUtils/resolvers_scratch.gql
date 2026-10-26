@@ -1,0 +1,68 @@
+mutation RegisterUser($username: String!, $email: String!, $password: String!) {
+  register(username: $username, email: $email, password: $password) {
+    id
+    username
+    email
+  }
+}
+
+
+
+  mutation CreateDeity(
+  $name: String!,
+  $locality: String!,
+  $parents: [String!],
+  $description: String!,
+  $siblings: [String],
+  $domain: String!,
+  $gallery: [String],
+  $favs: Int,
+  $rating: Float,
+  $shared: Int,
+  $children: [String],
+  $isMortal: Boolean
+) {
+  createDeity(
+    name: $name,
+    locality: $locality,
+    parents: $parents,
+    description: $description,
+    siblings: $siblings,
+    domain: $domain,
+    gallery: $gallery,
+    favs: $favs,
+    rating: $rating,
+    shared: $shared,
+    children: $children,
+    isMortal: $isMortal
+  ) {
+    id
+    name
+    parents
+    description
+    siblings
+    domain
+    locality
+    gallery
+    favs
+    rating
+    shared
+    children
+    isMortal
+  }
+}
+
+{
+  "name": "Zeus",
+  "parents": ["Cronus", "Rhea"],
+  "description": "The king of the gods in ancient Greek mythology.",
+  "siblings": ["Hera", "Poseidon", "Hades"],
+  "domain": "Sky and Thunder",
+  "locality":"Greek",
+  "gallery": ["zeus1.jpg", "zeus2.jpg"],
+  "favs": 120,
+  "rating": 4.9,
+  "shared": 15,
+  "children": ["Apollo", "Artemis", "Hermes"],
+  "isMortal": false
+}
