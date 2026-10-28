@@ -5,7 +5,7 @@
     <v-dialog
       :model-value="modelValue"
       :fullscreen="mobile"
-      :max-width="mobile ? undefined : 1080"
+      :max-width="mobile ? undefined : '80vw'"
       persistent
       scrollable
       scrim="black"
@@ -13,75 +13,64 @@
       z-index="2600"
       @update:model-value="onDialogModel"
     >
-      <v-card variant="flat" class="vi pa-3">
+      <v-card variant="flat" class="vi pa-3 pa-sm-6">
         <!-- Header -->
-        <v-toolbar density="compact" flat color="surface" class="vi__bar">
-          <template #prepend>
-            <v-avatar color="primary" variant="tonal" rounded="lg" size="32">
-              <v-icon icon="mdi-ticket-confirmation-outline" size="18" />
-            </v-avatar>
-          </template>
-          <v-toolbar-title class="text-subtitle-1 font-weight-bold">
-            {{ headerTitle }}
-            <span
-              class="text-caption text-medium-emphasis ml-2 d-none d-sm-inline"
-            >
-              {{ headerSubtitle }}
-            </span>
-          </v-toolbar-title>
-
-          <v-chip size="small" variant="tonal" color="primary" class="mr-1">
-            {{ fmt(totalCost) }}
-          </v-chip>
-          <v-chip size="small" variant="tonal" color="success" class="mr-1">
-            {{ currency }}
-          </v-chip>
-
+        <div class="vi__head">
+          <div class="vi__head-text">
+            <h2 class="vi__title">{{ headerTitle }}</h2>
+            <p class="vi__sub">{{ headerSubtitle }}</p>
+          </div>
           <v-btn
             v-if="!persistent"
             icon="mdi-close"
-            variant="text"
+            variant="outlined"
             size="small"
+            class="vi__close"
             aria-label="Close"
             @click="closeDialog"
           />
-        </v-toolbar>
-        <v-divider />
+        </div>
 
-        <v-row dense>
-          <!-- ============ LEFT ============ -->
-          <v-col cols="12" md="8">
-            <v-alert
-              v-if="message || token"
-              :type="reasonKind === 'already-redeemed' ? 'warning' : 'info'"
-              variant="tonal"
-              density="compact"
-              class="mb-3 mt-2"
-            >
-              <strong>{{ reasonTitle }}</strong>
-              <span v-if="message"> · {{ message }}</span>
-              <code v-if="token" class="ml-2">{{ token }}</code>
-            </v-alert>
-            <v-alert
-              v-else-if="step === 'configure' && persistent"
-              type="info"
-              variant="tonal"
-              density="compact"
-              class="mb-3 mt-3"
-            >
-              <strong>A ticket is required.</strong>
-              Scan the QR code on your voucher, buy access below, or
-              <a
-                href="#ticket-entry"
-                class="text-decoration-underline"
-                @click.prevent="focusTicketEntry"
-                >enter your ticket code</a
-              >.
-            </v-alert>
+        <v-container>
+          <!-- Alerts -->
+          <v-alert
+            v-if="message || token"
+            :type="reasonKind === 'already-redeemed' ? 'warning' : 'info'"
+            variant="tonal"
+            density="compact"
+            rounded="lg"
+            class="mb-3"
+          >
+            <strong>{{ reasonTitle }}</strong>
+            <span v-if="message"> · {{ message }}</span>
+            <code v-if="token" class="ml-2">{{ token }}</code>
+          </v-alert>
+          <v-alert
+            v-else-if="step === 'configure' && persistent"
+            type="info"
+            variant="tonal"
+            density="compact"
+            rounded="lg"
+            class="mb-5"
+          >
+            <strong>A ticket is required.</strong>
+            Scan the QR code on your voucher, buy access below, or
+            <a
+              href="#ticket-entry"
+              class="text-decoration-underline"
+              @click.prevent="focusTicketEntry"
+              >enter your ticket code</a
+            >.
+          </v-alert>
+        </v-container>
 
-            <!-- ---------- CONFIGURE ---------- -->
+        <!-- =============== MAIN LAYOUT =============== -->
+        <div class="vi__grid">
+          <!-- ---------- LEFT: configure ---------- -->
+          <div class="vi__left">
             <template v-if="step === 'configure'">
-              <div class="d-flex align-center ga-2 mb-2 mt-2">
+              <!-- Sheet tabs -->
+              <div class="d-flex align-center ga-2 mb-1">
                 <v-tabs
                   v-model="currentTab"
                   color="primary"
@@ -117,19 +106,20 @@
                 <v-btn
                   v-if="sheets.length < MAX_SHEETS"
                   size="small"
-                  variant="tonal"
-                  color="primary"
+                  variant="flat"
+                  color="#8B4513"
+                  rounded="lg"
                   prepend-icon="mdi-plus"
                   class="text-none"
                   :disabled="!canAddSheet"
                   @click="addSheet"
                 >
-                  Sheet
+                  New Tickets Sheet
                 </v-btn>
               </div>
 
-              <!-- Sheet progress + quick fill -->
-              <div class="vfill mb-3">
+              <!-- Quick fill -->
+              <div class="vfill mb-2 ga-2">
                 <span class="vfill__label">
                   <v-icon icon="mdi-flash-outline" size="14" />
                   Fill all
@@ -161,6 +151,7 @@
                 </span>
               </div>
 
+              <!-- Rows -->
               <div v-if="activeSheet" class="vrows">
                 <div
                   v-for="(slot, i) in activeSheet.slots"
@@ -171,56 +162,30 @@
                     'vrow--disabled': !isRowUnlocked(i),
                   }"
                 >
-                  <!-- index / state -->
-                  <span class="vrow__idx" aria-hidden="true">
-                    <v-icon v-if="slot.choice" icon="mdi-check" size="14" />
-                    <v-icon
-                      v-else-if="!isRowUnlocked(i)"
-                      icon="mdi-lock-outline"
-                      size="13"
-                    />
-                    <template v-else>{{ i + 1 }}</template>
-                  </span>
+                  <div class="vrow__head">
+                    <span class="vrow__idx" aria-hidden="true">
+                      <v-icon v-if="slot.choice" icon="mdi-check" size="13" />
+                      <v-icon
+                        v-else-if="!isRowUnlocked(i)"
+                        icon="mdi-lock-outline"
+                        size="12"
+                      />
+                      <template v-else>{{ i + 1 }}</template>
+                    </span>
+                    <span class="vrow__label">Voucher {{ i + 1 }}</span>
 
-                  <!-- duration chips -->
-                  <v-chip-group
-                    :model-value="slot.choice"
-                    column
-                    class="vrow__chips"
-                    :aria-label="`Voucher ${i + 1} duration`"
-                    :disabled="!isRowUnlocked(i)"
-                    @update:model-value="(v: unknown) => setChoice(i, v)"
-                  >
-                    <v-chip
-                      v-for="t in TIERS"
-                      :key="t.value"
-                      :value="t.value"
-                      size="default"
-                      rounded="lg"
-                      :variant="slot.choice === t.value ? 'flat' : 'tonal'"
-                      :color="slot.choice === t.value ? 'primary' : undefined"
-                      class="vchip"
-                      :class="{ 'vchip--on': slot.choice === t.value }"
-                      :title="`Position ${t.place} · ${fmt(BASE[currency] * t.mult)}`"
-                    >
-                      <span class="vchip__pos">{{ t.place }}</span>
-                      {{ shortTitle(t) }}
-                    </v-chip>
-                  </v-chip-group>
-
-                  <!-- cost + clear -->
-                  <span class="vrow__side">
                     <span class="vrow__cost">
                       <template v-if="slot.choice">
-                        <div class="vrow__main-cost">
+                        <span class="vrow__main-cost">
                           {{ fmt(BASE[currency] * multOf(slot.choice)) }}
-                        </div>
-                        <div class="vrow__alt-cost">
+                        </span>
+                        <span class="vrow__alt-cost">
                           {{ altPrice(multOf(slot.choice)) }}
-                        </div>
+                        </span>
                       </template>
                       <span v-else class="text-medium-emphasis">—</span>
                     </span>
+
                     <v-btn
                       icon="mdi-close"
                       size="x-small"
@@ -232,11 +197,37 @@
                       :aria-label="`Clear voucher ${i + 1}`"
                       @click="setChoice(i, null)"
                     />
-                  </span>
+                  </div>
+
+                  <div
+                    class="vtiers"
+                    role="radiogroup"
+                    :aria-label="`Voucher ${i + 1} duration`"
+                  >
+                    <button
+                      v-for="t in TIERS"
+                      :key="t.value"
+                      type="button"
+                      role="radio"
+                      class="vtier"
+                      :class="{ 'vtier--on': slot.choice === t.value }"
+                      :aria-checked="slot.choice === t.value"
+                      :disabled="!isRowUnlocked(i)"
+                      :title="`Position ${t.place} · ${t.title} · ${fmt(BASE[currency] * t.mult)}`"
+                      @click="
+                        setChoice(i, slot.choice === t.value ? null : t.value)
+                      "
+                    >
+                      <span class="vtier__title">{{ shortTitle(t) }}</span>
+                      <span class="vtier__price">
+                        {{ fmt(BASE[currency] * t.mult) }}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div class="vhelp mt-3">
+              <div class="vhelp mt-2">
                 <v-icon icon="mdi-information-outline" size="14" />
                 <span>
                   Pick durations top-down; the letter is the voucher's position.
@@ -252,6 +243,7 @@
               type="success"
               variant="tonal"
               density="comfortable"
+              rounded="lg"
             >
               <div class="font-weight-bold">Payment received</div>
               <div class="mt-1">
@@ -261,223 +253,208 @@
                 start exploring.
               </div>
             </v-alert>
+          </div>
 
-            <!-- ---------- TICKET ENTRY (both steps) ---------- -->
-            <div id="ticket-entry" ref="ticketEntryEl" class="vticket mt-4">
-              <div class="vticket__title">
-                <v-icon icon="mdi-qrcode-scan" size="16" />
-                Have a ticket already?
-                <span class="text-caption text-medium-emphasis">
-                  Enter the {{ ticketLength }}-digit code from your voucher.
-                </span>
+          <!-- ---------- RIGHT: summary + checkout ---------- -->
+          <div class="vi__right">
+            <!-- Order summary card -->
+            <div class="vplan">
+              <div class="vplan__top">
+                <div class="vplan__name">Order summary</div>
+                <div class="vplan__price">
+                  <span class="vplan__amount">{{ fmt(totalCost) }}</span>
+                  <span class="vplan__per">total</span>
+                </div>
+              </div>
+
+              <span class="vplan__pill">
+                <v-icon icon="mdi-ticket-confirmation-outline" size="12" />
+                {{ usedSheetCount }} sheet{{
+                  usedSheetCount === 1 ? "" : "s"
+                }}
+                · {{ paidCount }} voucher{{ paidCount === 1 ? "" : "s" }}
+                <template v-if="paidCount">
+                  · {{ altPrice(totalUnits) }}
+                </template>
+              </span>
+
+              <div v-if="summaryLines.length" class="vlines">
+                <div v-for="l in summaryLines" :key="l.value" class="vline">
+                  <span class="vline__pos">{{ l.place }}</span>
+                  <span class="text-truncate">{{ l.title }}</span>
+                  <span class="text-medium-emphasis">× {{ l.count }}</span>
+                  <span class="ml-auto font-weight-medium text-right">
+                    {{ fmt(BASE[currency] * l.mult * l.count) }}
+                  </span>
+                </div>
+              </div>
+              <div v-else class="vplan__feature">
+                <v-icon icon="mdi-ticket-outline" size="14" />
+                <span>Select at least one slot to continue.</span>
+              </div>
+
+              <v-divider class="my-2" />
+              <div class="vplan__feature">
+                <v-icon icon="mdi-check-circle" size="14" color="success" />
+                <span
+                  >Valid 120 days from issue · price re-verified by server</span
+                >
+              </div>
+            </div>
+
+            <!-- Your details + Pay -->
+            <template v-if="step === 'configure'">
+              <div class="vsec-label mt-1 mb-1">Your details</div>
+              <v-text-field
+                v-model="payerForm.name"
+                placeholder="Full name"
+                aria-label="Full name"
+                prepend-inner-icon="mdi-account-outline"
+                density="compact"
+                variant="outlined"
+                rounded="lg"
+                hide-details
+                autocomplete="name"
+                class="vinput mb-2"
+              />
+              <v-text-field
+                v-model="payerForm.email"
+                placeholder="Email for voucher PDFs"
+                aria-label="Email for voucher PDFs"
+                type="email"
+                prepend-inner-icon="mdi-email-outline"
+                density="compact"
+                variant="outlined"
+                rounded="lg"
+                autocomplete="email"
+                :error="emailTouched && !emailValid"
+                :hide-details="!(emailTouched && !emailValid)"
+                :error-messages="
+                  emailTouched && !emailValid ? 'Enter a valid email' : ''
+                "
+                class="vinput mb-2"
+                @blur="emailTouched = true"
+              />
+
+              <!-- FIXED PAYMENT PROCESSORS -->
+              <div
+                class="vpay__logos"
+                role="group"
+                aria-label="Choose a payment method"
+              >
+                <button
+                  type="button"
+                  class="vpay__brand"
+                  aria-label="Pay with PayPal or Card"
+                  :aria-disabled="!!checkoutHint"
+                  @click="openPaypal"
+                >
+                  <img
+                    :src="paypalIcon"
+                    alt="PayPal"
+                    class="vpay__logo"
+                    draggable="false"
+                  />
+                </button>
+
+                <button
+                  type="button"
+                  class="vpay__brand"
+                  aria-label="Pay with M-PESA"
+                  :aria-disabled="!!checkoutHint"
+                  @click="openMpesa"
+                >
+                  <img
+                    :src="mpesaIcon"
+                    alt="M-PESA"
+                    class="vpay__logo"
+                    draggable="false"
+                  />
+                </button>
               </div>
 
               <div
-                class="vticket__otp"
-                role="group"
-                :aria-label="`${ticketLength}-digit ticket code`"
+                v-if="checkoutHint"
+                class="vpay__note text-warning"
+                role="status"
+                aria-live="polite"
               >
-                <input
-                  v-for="(_, idx) in ticketDigits"
-                  :key="idx"
-                  :ref="(el) => setTicketInputRef(el, idx)"
-                  :value="ticketDigits[idx]"
-                  class="vticket__box"
-                  :class="{
-                    'vticket__box--filled': !!ticketDigits[idx],
-                    'vticket__box--error': !!ticketError,
-                  }"
-                  type="text"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  :maxlength="1"
-                  :autocomplete="idx === 0 ? 'one-time-code' : 'off'"
-                  spellcheck="false"
-                  :disabled="ticketBusy"
-                  :aria-label="`Digit ${idx + 1}`"
-                  @input="onTicketInput(idx, $event)"
-                  @keydown="onTicketKeydown(idx, $event)"
-                  @paste="onTicketPaste($event)"
-                  @focus="onTicketFocus($event)"
-                />
+                {{ checkoutHint }}
+              </div>
+              <div v-else class="vpay__note text-medium-emphasis">
+                PayPal is charged in USD ({{ fmtIn("USD", usdTotal) }}); M-PESA
+                in KES ({{ fmtIn("KES", kesTotal) }}).
+              </div>
+              <div class="vpay__note vpay__note--trust text-medium-emphasis">
+                <v-icon icon="mdi-lock-check-outline" size="13" />
+                Encrypted checkout · we never see your card or PIN
               </div>
 
-              <div v-if="ticketError" class="vticket__error">
-                <v-icon icon="mdi-alert-circle-outline" size="14" />
-                {{ ticketError }}
-              </div>
-              <div v-else class="vticket__hint">
-                Digits only. Spaces and dashes are ignored.
-              </div>
-
-              <div class="vticket__actions">
+              <div v-if="!persistent" class="text-center mt-1">
                 <v-btn
-                  color="primary"
-                  variant="flat"
-                  size="small"
-                  prepend-icon="mdi-login-variant"
-                  :loading="ticketBusy"
-                  :disabled="!ticketTokenValid || ticketBusy"
-                  @click="submitTicket"
-                >
-                  Use ticket
-                </v-btn>
-                <v-btn
-                  v-if="normalizedTicket"
                   variant="text"
                   size="small"
-                  :disabled="ticketBusy"
-                  @click="clearTicket"
-                >
-                  Clear
-                </v-btn>
-              </div>
-            </div>
-          </v-col>
-
-          <!-- ============ RIGHT ============ -->
-          <v-col cols="12" md="4" class="mt-2">
-            <div class="vside">
-              <div class="vcard">
-                <div class="vcard__title">
-                  <v-icon icon="mdi-receipt-text-outline" size="16" />
-                  Order summary
-                  <span class="ml-auto text-caption text-medium-emphasis">
-                    {{ usedSheetCount }} sheet{{
-                      usedSheetCount === 1 ? "" : "s"
-                    }}
-                    · {{ paidCount }} voucher{{ paidCount === 1 ? "" : "s" }}
-                  </span>
-                </div>
-
-                <div v-if="summaryLines.length" class="vlines">
-                  <div v-for="l in summaryLines" :key="l.value" class="vline">
-                    <span class="vline__pos">{{ l.place }}</span>
-                    <span>{{ l.title }}</span>
-                    <span class="text-medium-emphasis">× {{ l.count }}</span>
-                    <span class="ml-auto text-right">
-                      <div class="font-weight-medium">
-                        {{ fmt(BASE[currency] * l.mult * l.count) }}
-                      </div>
-                      <div class="vline__alt">
-                        {{ altPrice(l.mult * l.count) }}
-                      </div>
-                    </span>
-                  </div>
-                </div>
-                <div v-else class="vempty">
-                  <v-icon icon="mdi-ticket-outline" size="20" />
-                  Select at least one slot to continue.
-                </div>
-
-                <v-divider class="my-2" />
-                <div class="d-flex align-baseline">
-                  <span class="text-body-2 font-weight-bold">Total</span>
-                  <span class="ml-auto text-right">
-                    <div class="text-h6 font-weight-bold text-primary">
-                      {{ fmt(totalCost) }}
-                    </div>
-                    <div class="vline__alt">{{ altPrice(totalUnits) }}</div>
-                  </span>
-                </div>
-                <div class="text-caption text-medium-emphasis">
-                  Valid 120 days from issue · price re-verified by server
-                </div>
-              </div>
-
-              <div v-if="step === 'configure'" class="vcard">
-                <div class="vcard__title">
-                  <v-icon
-                    icon="mdi-shield-lock-outline"
-                    size="16"
-                    color="success"
-                  />
-                  Secure checkout
-                </div>
-
-                <v-text-field
-                  v-model="payerForm.name"
-                  label="Full name"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  autocomplete="name"
-                  class="mb-2"
-                />
-                <v-text-field
-                  v-model="payerForm.email"
-                  label="Email for voucher PDFs"
-                  type="email"
-                  density="compact"
-                  variant="outlined"
-                  autocomplete="email"
-                  :error="emailTouched && !emailValid"
-                  :hide-details="!(emailTouched && !emailValid)"
-                  :error-messages="
-                    emailTouched && !emailValid ? 'Enter a valid email' : ''
-                  "
-                  class="mb-2"
-                  @blur="emailTouched = true"
-                />
-
-                <div class="vmethods mb-2" role="group" aria-label="Pay with">
-                  <button
-                    type="button"
-                    class="vbrand"
-                    :disabled="!!checkoutHint"
-                    aria-label="Pay with PayPal or card"
-                    @click="openPaypal"
-                  >
-                    <img
-                      :src="paypalIcon"
-                      alt="PayPal"
-                      class="vbrand__img"
-                      draggable="false"
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    class="vbrand"
-                    :disabled="!!checkoutHint"
-                    aria-label="Pay with M-PESA"
-                    @click="openMpesa"
-                  >
-                    <img
-                      :src="mpesaIcon"
-                      alt="M-PESA"
-                      class="vbrand__img"
-                      draggable="false"
-                    />
-                  </button>
-                </div>
-
-                <div v-if="checkoutHint" class="text-caption text-warning">
-                  {{ checkoutHint }}
-                </div>
-                <div v-else class="text-caption text-medium-emphasis">
-                  PayPal is charged in USD ({{ fmtIn("USD", usdTotal) }});
-                  M-PESA in KES ({{ fmtIn("KES", kesTotal) }}).
-                </div>
-
-                <div class="vtrust">
-                  <v-icon icon="mdi-lock-check-outline" size="14" />
-                  Encrypted checkout · we never see your card or PIN
-                </div>
-
-                <v-btn
-                  v-if="!persistent"
-                  block
-                  variant="text"
-                  size="small"
-                  class="mt-1 text-none"
+                  class="text-none"
                   @click="closeDialog"
                 >
                   Cancel
                 </v-btn>
               </div>
-            </div>
-          </v-col>
-        </v-row>
+            </template>
+          </div>
+        </div>
+
+        <!-- ---------- TICKET ENTRY (both steps) ---------- -->
+        <div id="ticket-entry" ref="ticketEntryEl" class="vticket mt-3">
+          <div class="vticket__title">
+            <v-icon icon="mdi-qrcode-scan" size="16" />
+            Already have a ticket?
+          </div>
+          <div class="vticket__caption">
+            Enter the {{ ticketLength }}-digit code from your voucher.
+          </div>
+
+          <div
+            class="vticket__otp"
+            role="group"
+            :aria-label="`${ticketLength}-digit ticket code`"
+          >
+            <input
+              v-for="(_, idx) in ticketDigits"
+              :key="idx"
+              :ref="(el) => setTicketInputRef(el, idx)"
+              :value="ticketDigits[idx]"
+              class="vticket__box"
+              :class="{
+                'vticket__box--filled': !!ticketDigits[idx],
+                'vticket__box--error': !!ticketError,
+              }"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              :maxlength="1"
+              :autocomplete="idx === 0 ? 'one-time-code' : 'off'"
+              spellcheck="false"
+              :disabled="ticketBusy"
+              :aria-label="`Digit ${idx + 1}`"
+              @input="onTicketInput(idx, $event)"
+              @keydown="onTicketKeydown(idx, $event)"
+              @paste="onTicketPaste($event)"
+              @focus="onTicketFocus($event)"
+            />
+          </div>
+          <v-btn
+            v-if="normalizedTicket"
+            variant="text"
+            size="small"
+            rounded="lg"
+            class="text-none"
+            :disabled="ticketBusy"
+            @click="clearTicket"
+          >
+            Clear
+          </v-btn>
+        </div>
       </v-card>
     </v-dialog>
 
@@ -547,6 +524,7 @@ import mpesaIconUrl from "@/assets/icons/mpesa.png";
 const paypalIcon = paypalIconUrl as unknown as string;
 const mpesaIcon = mpesaIconUrl as unknown as string;
 const voucherStore = useVoucherStore();
+
 /* ---------- types ---------- */
 type Currency = "KES" | "USD" | "EUR";
 type DurationOption = "M15" | "M30" | "H1" | "H2" | "H3";
@@ -1053,8 +1031,8 @@ const headerTitle = computed(() =>
 const headerSubtitle = computed(() =>
   step.value === "configure"
     ? paidCount.value
-      ? "Ready for checkout"
-      : "Pick a duration per row"
+      ? "Ready for checkout — confirm with your PIN."
+      : "Pick a duration per row, then pay in one tap."
     : "Check your email for the PDFs",
 );
 
@@ -1081,128 +1059,244 @@ const reasonTitle = computed(() => {
 </script>
 
 <style scoped>
-.vi__bar {
+/* ==========================================
+   TUKEMA VOUCHER CHECKOUT
+   Responsive shell and layout
+========================================== */
+
+.vi-root {
+  --brand-primary: #8b4513;
+  --brand-secondary: #2b2b2b;
+  --brand-accent: #f08228;
+  --brand-light: #f5efe6;
+  --brand-dark: #1a1a1a;
+
+  --vi-gap: 16px;
+  --vi-radius: 24px;
+
+  width: 100%;
+  min-width: 0;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+/* Main card — padding handled by Vuetify utilities */
+.vi {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 92dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgb(var(--v-theme-surface));
+  border-radius: var(--vi-radius) !important;
+}
+
+/* Header */
+.vi__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+.vi__head-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vi__title {
+  margin: 0;
+  color: var(--brand-secondary);
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.vi__sub {
+  margin: 4px 0 0;
+  color: rgba(var(--v-theme-on-surface), 0.65);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.vi__close {
   flex: 0 0 auto;
 }
 
-/* ---------- rows ---------- */
-.vrows {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.vrow {
+/* Main responsive grid */
+.vi__grid {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: 12px;
-  min-height: 56px;
-  padding: 8px 12px 8px 10px;
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 14px;
-  background: rgb(var(--v-theme-surface));
-  transition:
-    border-color 0.15s,
-    background-color 0.15s,
-    opacity 0.15s,
-    box-shadow 0.15s;
-}
-.vrow:hover:not(.vrow--disabled) {
-  border-color: rgba(var(--v-theme-primary), 0.35);
-}
-.vrow--done {
-  border-color: rgba(var(--v-theme-primary), 0.5);
-  background: rgba(var(--v-theme-primary), 0.05);
-  box-shadow: 0 1px 0 rgba(var(--v-theme-primary), 0.08);
-}
-.vrow--disabled {
-  opacity: 0.5;
-  background: rgba(var(--v-theme-on-surface), 0.02);
-}
-.vrow__idx {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(var(--v-theme-on-surface), 0.08);
-  transition:
-    background-color 0.15s,
-    color 0.15s;
-}
-.vrow--done .vrow__idx {
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-}
-.vrow__chips {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--vi-gap);
+  width: 100%;
   min-width: 0;
 }
-.vrow__chips :deep(.v-slide-group__content) {
-  gap: 6px;
-  padding: 0;
-}
-.vrow__side {
+
+.vi__left,
+.vi__right {
+  min-width: 0;
+  width: 100%;
   display: flex;
-  align-items: center;
-  gap: 2px;
-}
-.vrow__cost {
-  min-width: 84px;
-  text-align: right;
-  font-size: 0.875rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.vrow__main-cost {
-  line-height: 1.15;
-}
-.vrow__alt-cost,
-.vline__alt {
-  font-size: 0.65rem;
-  font-weight: 400;
-  line-height: 1.15;
-  color: rgba(var(--v-theme-on-surface), 0.55);
-}
-.vrow__clear--hidden {
-  visibility: hidden;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* ---------- chips (tonal idle, flat selected) ---------- */
-.vchip {
-  margin: 0 !important;
-  padding-inline: 6px 12px !important;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    transform 0.1s,
-    box-shadow 0.15s;
+.vplan,
+.vrow,
+.vticket {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
-.vchip:hover:not(.v-chip--disabled) {
-  transform: translateY(-1px);
+
+@media (min-width: 960px) {
+  .vi {
+    overflow-y: auto;
+  }
+
+  .vi__grid {
+    grid-template-columns:
+      minmax(0, 1.55fr)
+      minmax(300px, 0.85fr);
+    gap: 20px;
+  }
+
+  .vi__left {
+    padding-right: 4px;
+  }
+
+  .vi__right {
+    position: sticky;
+    top: 0;
+    align-self: start;
+  }
 }
-.vchip:active:not(.v-chip--disabled) {
-  transform: translateY(0);
+
+@media (min-width: 1280px) {
+  .vi__grid {
+    grid-template-columns:
+      minmax(0, 1.65fr)
+      minmax(320px, 0.85fr);
+    gap: 24px;
+  }
 }
-.vchip--on {
-  box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.35);
+
+@media (max-width: 599px) {
+  .vi {
+    min-height: 100%;
+    max-height: 100dvh;
+    border-radius: 0 !important;
+  }
+
+  .vi__head {
+    margin-bottom: 10px;
+  }
+
+  .vi__grid {
+    gap: 14px;
+  }
+
+  .vi__right {
+    gap: 10px;
+  }
 }
-.vchip__pos {
-  display: inline-grid;
-  place-items: center;
+
+@media (max-width: 360px) {
+  .vi__title {
+    font-size: 1.1rem;
+  }
+}
+
+/* ---------- plan / summary card ---------- */
+.vplan {
+  padding: 12px 14px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 16px;
+  background: var(--brand-light, rgb(var(--v-theme-surface)));
+}
+.vplan__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.vplan__name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+.vplan__price {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.vplan__amount {
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+  font-weight: 850;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  color: var(--brand-secondary);
+}
+.vplan__per {
+  font-size: 0.8125rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+.vplan__pill {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 100%;
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  background: rgba(139, 69, 19, 0.1);
+  color: var(--brand-primary);
+}
+.vplan__feature {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: rgba(var(--v-theme-on-surface), 0.75);
+}
+.vplan__feature:last-child {
+  margin-top: 0;
+}
+
+/* ---------- lines ---------- */
+.vlines {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.vline {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+}
+.vline__pos {
   width: 18px;
   height: 18px;
-  margin-right: 6px;
   border-radius: 50%;
+  display: grid;
+  place-items: center;
   font-size: 0.625rem;
   font-weight: 700;
-  background: rgba(var(--v-theme-primary), 0.16);
-  color: rgb(var(--v-theme-primary));
-}
-.vchip--on .vchip__pos {
-  background: rgba(255, 255, 255, 0.28);
-  color: inherit;
+  background: rgba(139, 69, 19, 0.14);
+  color: var(--brand-primary);
 }
 
 /* ---------- quick fill ---------- */
@@ -1228,6 +1322,184 @@ const reasonTitle = computed(() => {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
 }
+.vchip__pos {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  border-radius: 50%;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  background: rgba(139, 69, 19, 0.16);
+  color: var(--brand-primary);
+}
+
+/* ---------- Voucher rows ---------- */
+.vrows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.vrow {
+  padding: 10px 12px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 16px;
+  background: rgb(var(--v-theme-surface));
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+.vrow--done {
+  border-color: rgba(139, 69, 19, 0.55);
+  background: rgba(139, 69, 19, 0.025);
+}
+.vrow--disabled {
+  opacity: 0.55;
+  background: rgba(var(--v-theme-on-surface), 0.025);
+}
+
+.vrow__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 10px;
+  padding: 0;
+}
+.vrow__idx {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+.vrow--done .vrow__idx {
+  background: var(--brand-primary);
+  color: #fff;
+}
+.vrow__label {
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 750;
+}
+.vrow__cost {
+  margin-left: auto;
+  flex: 0 0 auto;
+  text-align: right;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.vrow__main-cost {
+  line-height: 1.15;
+}
+.vrow__alt-cost {
+  font-size: 0.625rem;
+  font-weight: 400;
+  line-height: 1.15;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+}
+.vrow__clear--hidden {
+  visibility: hidden;
+}
+
+/* ---------- Duration options ---------- */
+.vtiers {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.vtier {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 60px;
+  padding: 10px 2px 6px;
+
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 12px;
+
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-on-surface));
+  cursor: pointer;
+
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.vtier:hover:not(:disabled) {
+  border-color: var(--brand-primary);
+}
+.vtier:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+.vtier:disabled {
+  cursor: not-allowed;
+}
+.vtier--on {
+  border-color: var(--brand-primary);
+  background: rgba(139, 69, 19, 0.09);
+  box-shadow: inset 0 0 0 1px var(--brand-primary);
+}
+
+.vtier__badge {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  max-width: calc(100% - 4px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(240, 130, 40, 0.2);
+  color: var(--brand-accent);
+}
+.vtier--on .vtier__badge {
+  background: var(--brand-primary);
+  color: #fff;
+}
+
+.vtier__title {
+  font-size: clamp(0.8rem, 1.2vw, 0.95rem);
+  font-weight: 800;
+  line-height: 1.15;
+}
+.vtier__price {
+  max-width: 100%;
+  font-size: clamp(0.58rem, 0.85vw, 0.7rem);
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+  color: rgba(var(--v-theme-on-surface), 0.65);
+}
+.vtier--on .vtier__price {
+  color: var(--brand-primary);
+  font-weight: 800;
+}
 
 .vhelp {
   display: flex;
@@ -1241,52 +1513,231 @@ const reasonTitle = computed(() => {
   margin-top: 2px;
 }
 
-/* ---------- ticket ---------- */
-.vticket {
-  padding: 10px 12px;
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+/* ---------- details + pay ---------- */
+.vsec-label {
+  margin-bottom: 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+.vinput :deep(.v-field) {
+  min-width: 0;
+  background: rgba(139, 69, 19, 0.035);
   border-radius: 12px;
-  background: rgba(var(--v-theme-primary), 0.03);
+  font-size: 0.9375rem;
+}
+.vinput :deep(.v-field__outline) {
+  --v-field-border-opacity: 0.35;
+  color: var(--brand-primary);
+}
+.vinput :deep(.v-field--focused .v-field__outline) {
+  --v-field-border-opacity: 1;
+}
+.vinput :deep(.v-field__prepend-inner) {
+  padding-inline-end: 8px;
+  margin-inline-end: 8px;
+  border-inline-end: thin solid
+    rgba(var(--v-border-color), var(--v-border-opacity));
+  align-self: stretch;
+  align-items: center;
+  color: var(--brand-primary);
+}
+
+.vpay {
+  width: 100%;
+  min-height: 48px;
+  height: auto !important;
+  padding: 10px 16px;
+  white-space: normal;
+  line-height: 1.35;
+  border-radius: 12px !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+  background: var(--brand-primary) !important;
+  color: #fff !important;
+}
+
+.vpay__alt {
+  margin-top: 8px;
+  text-align: center;
+}
+.vpay__link {
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  cursor: pointer;
+}
+.vpay__link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.vpay__link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.vpay__link:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- payment processors ---------- */
+.vpay__logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.vpay__brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 1 140px;
+  min-width: 112px;
+  min-height: 48px;
+  padding: 8px 16px;
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(139, 69, 19, 0.35);
+  border-radius: 12px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.vpay__brand:hover {
+  background: rgba(139, 69, 19, 0.06);
+  border-color: var(--brand-primary);
+  transform: translateY(-1px);
+}
+
+.vpay__brand:active {
+  transform: scale(0.98);
+}
+
+.vpay__brand:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 3px;
+}
+
+/* Remain clickable when checkout validation fails */
+.vpay__brand[aria-disabled="true"] {
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+/* Native images have predictable dimensions */
+.vpay__logo {
+  display: block;
+  width: auto;
+  height: 26px;
+  max-width: 100px;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.vpay__note {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.vpay__note--trust {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+@media (max-width: 400px) {
+  .vpay__logos {
+    gap: 8px;
+  }
+
+  .vpay__brand {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 10px;
+  }
+
+  .vpay__logo {
+    height: 24px;
+    max-width: 100%;
+  }
+}
+
+/* ---------- ticket entry ---------- */
+.vticket {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 10px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  text-align: center;
 }
 .vticket__title {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 8px;
-  font-size: 0.8125rem;
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+.vticket__caption {
+  margin: 4px 0 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(var(--v-theme-on-surface), 0.65);
 }
 .vticket__otp {
   display: flex;
-  gap: 6px;
+  justify-content: center;
+  gap: clamp(4px, 1.5vw, 8px);
+  width: 100%;
+  max-width: 340px;
+  margin-inline: auto;
 }
 .vticket__box {
-  width: 38px;
-  height: 44px;
-  text-align: center;
-  font-size: 1.05rem;
-  font-weight: 700;
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  max-width: 40px;
+  height: 42px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: rgb(var(--v-theme-on-surface));
   background: rgb(var(--v-theme-surface));
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 10px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   outline: none;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
 }
 .vticket__box:hover:not(:disabled) {
-  border-color: rgba(var(--v-theme-primary), 0.6);
+  border-color: rgba(139, 69, 19, 0.6);
 }
 .vticket__box:focus {
-  border-color: rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.25);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.25);
 }
 .vticket__box--filled {
-  background: rgba(var(--v-theme-primary), 0.08);
-  border-color: rgba(var(--v-theme-primary), 0.5);
+  background: rgba(139, 69, 19, 0.08);
+  border-color: rgba(139, 69, 19, 0.5);
 }
 .vticket__box--error {
   border-color: rgb(var(--v-theme-error));
@@ -1299,8 +1750,9 @@ const reasonTitle = computed(() => {
 .vticket__error {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 0.6875rem;
 }
 .vticket__hint {
@@ -1311,151 +1763,49 @@ const reasonTitle = computed(() => {
 }
 .vticket__actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-/* ---------- side cards ---------- */
-.vside {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-@media (min-width: 960px) {
-  .vside {
-    position: sticky;
-    top: 0;
-  }
-}
-.vcard {
-  padding: 12px;
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 14px;
-  background: rgb(var(--v-theme-surface));
-}
-.vcard__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  font-size: 0.8125rem;
-  font-weight: 700;
-}
-.vlines {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.vline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8125rem;
-}
-.vline__pos {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 0.625rem;
-  font-weight: 700;
-  background: rgba(var(--v-theme-primary), 0.14);
-  color: rgb(var(--v-theme-primary));
-}
-.vempty {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
-  border: thin dashed rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 10px;
-  font-size: 0.75rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-.vmethods {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.vbrand {
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   justify-content: center;
-  min-height: 52px;
-  padding: 8px 12px;
-  background: #fff;
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 12px;
-  cursor: pointer;
-  transition:
-    box-shadow 0.15s,
-    transform 0.1s;
-}
-.vbrand:hover:not(:disabled) {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
-}
-.vbrand:active:not(:disabled) {
-  transform: translateY(1px);
-}
-.vbrand:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.vbrand:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-}
-.vbrand__img {
-  max-width: 100%;
-  max-height: 32px;
-  object-fit: contain;
-  user-select: none;
-  pointer-events: none;
-}
-.vtrust {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  gap: 8px;
   margin-top: 8px;
-  font-size: 0.6875rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 
-/* ---------- mobile: chips drop under the index/cost line ---------- */
-@media (max-width: 600px) {
+/* ---------- small screens ---------- */
+@media (max-width: 400px) {
   .vrow {
-    grid-template-columns: 28px 1fr auto;
-    grid-template-areas:
-      "idx . side"
-      "chips chips chips";
-    row-gap: 6px;
     padding: 8px 10px;
+    border-radius: 12px;
   }
-  .vrow__idx {
-    grid-area: idx;
+  .vtiers {
+    gap: 4px;
   }
-  .vrow__side {
-    grid-area: side;
+  .vtier {
+    min-height: 56px;
+    padding: 8px 1px 5px;
+    border-radius: 8px;
+    gap: 3px;
   }
-  .vrow__chips {
-    grid-area: chips;
+  .vtier__badge {
+    font-size: 0.5rem;
+    padding-inline: 4px;
   }
-  .vrow__cost {
-    min-width: 0;
+  .vtier__title {
+    font-size: 0.75rem;
+  }
+  .vtier__price {
+    font-size: 0.55rem;
   }
   .vticket__box {
-    width: 32px;
-    height: 40px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 1rem;
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .vrow,
-  .vrow__idx,
-  .vchip,
-  .vbrand,
-  .vticket__box {
+  .vtier,
+  .vticket__box,
+  .vpay__brand {
     transition: none;
   }
 }

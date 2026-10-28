@@ -153,7 +153,20 @@
               <template #prepend><v-icon>mdi-shield-lock</v-icon></template>
               <v-list-item-title>{{ t("account.security") }}</v-list-item-title>
             </v-list-item>
-
+            <v-list-item to="/account/security">
+              <template #prepend><v-icon>mdi-speak</v-icon></template>
+              <v-list-item-title><!-- add right after the success chip -->
+<v-btn
+  color="#3D8361"
+  variant="flat"
+  prepend-icon="mdi-bullhorn-variant"
+  class="text-none"
+  :disabled="launchFlow.open"
+  @click="openLaunchFlow"
+>
+  Launch Campaign
+</v-btn></v-list-item-title>
+            </v-list-item>
             <v-divider />
             <v-list-item @click="logout">
               <template #prepend><v-icon>mdi-logout</v-icon></template>

@@ -1,13 +1,12 @@
 <!-- views/MuseumExplorer.vue -->
 <template>
-  <v-container fluid class="explorer pa-0">
+  <v-layout class="explorer" :class="{ 'explorer--compact': !isDesktop }">
     <!-- ============ VOUCHER: validating dialog ============ -->
     <v-dialog
       :model-value="validating"
       persistent
       width="auto"
       scrim="black"
-      class="voucher-status-dialog"
       z-index="3000"
     >
       <v-card class="pa-6 d-flex flex-column align-center" min-width="240">
@@ -21,130 +20,470 @@
       </v-card>
     </v-dialog>
 
-    <!-- ============ VOUCHER: purchase dialog (hard gate) ============ -->
+    <!-- ============ VOUCHER: purchase dialog (hard gate / add time) ============ -->
     <VoucherPurchaseDialog
-      :model-value="locked"
-      persistent
-      :token="voucherStore.code ?? undefined"
-      :message="voucherStore.error ?? undefined"
-      :reason="voucherStore.error ?? undefined"
+      :model-value="locked || buyOpen"
+      :persistent="locked"
+      :token="locked ? (voucherStore.code ?? undefined) : undefined"
+      :message="locked ? (voucherStore.error ?? undefined) : undefined"
+      :reason="locked ? (voucherStore.error ?? undefined) : undefined"
+      @update:model-value="buyOpen = $event"
       @payment-success="onPurchaseSuccess"
     />
 
-    <!-- ============ TOP TOOLBAR ============ -->
-    <v-toolbar density="comfortable" class="explorer__toolbar">
-      <router-link to="/dashboard" class="brand-link d-none d-sm-flex">
-        <v-icon start class="mr-2">mdi-bank-outline</v-icon>
-        <span class="text-h6 font-weight-bold">Museum</span>
-      </router-link>
-
-      <v-tabs
-        :model-value="activeCategory"
-        show-arrows
-        color="primary"
-        class="ml-2 ml-md-4 explorer__tabs"
-        @update:model-value="setCategory"
-      >
-        <v-tab :value="ALL">All</v-tab>
-        <v-tab v-for="c in store.categories" :key="c.slug" :value="c.slug">
-          {{ c.label }}
-        </v-tab>
-      </v-tabs>
-
-      <v-spacer />
-
-      <v-text-field
-        v-model="searchText"
-        density="compact"
-        variant="solo"
-        flat
-        hide-details
-        clearable
-        prepend-inner-icon="mdi-magnify"
-        placeholder="Search artefacts"
-        class="explorer__search mr-2 d-none d-md-flex"
-        @update:model-value="onSearchChanged"
-        @click:clear="onSearchChanged('')"
-      />
-
-      <!-- Access + countdown chip -->
-      <v-chip
-        v-if="accessGranted"
-        size="small"
-        color="success"
-        variant="tonal"
-        prepend-icon="mdi-ticket-confirmation-outline"
-        class="mr-2 d-none d-sm-flex"
-        :title="`Redeemed token ${voucherStore.code ?? ''}`"
-      >
-        {{ voucherStore.code ?? "Access granted" }}
-        <template v-if="remainingLabel"> · {{ remainingLabel }} </template>
-      </v-chip>
-
-      <!-- Mobile-only timer badge -->
-      <v-chip
-        v-if="accessGranted && remainingLabel"
-        size="x-small"
-        color="warning"
-        variant="tonal"
-        prepend-icon="mdi-timer-outline"
-        class="mr-1 d-sm-none"
-      >
-        {{ remainingLabel }}
-      </v-chip>
-
-      <div class="utility-cluster">
+    <!-- ============ Notices (time warnings, snapshots) ============ -->
+    <v-snackbar
+      v-model="notice.show"
+      :color="notice.color"
+      location="top"
+      :timeout="6000"
+      z-index="3100"
+    >
+      {{ notice.text }}
+      <template #actions>
         <v-btn
-          icon
+          v-if="notice.action"
           variant="text"
-          size="small"
-          @click="onSearchChanged(searchText)"
+          @click="
+            notice.show = false;
+            openBuyMore();
+          "
         >
-          <v-icon>mdi-magnify</v-icon>
+          Add time
         </v-btn>
-        <v-btn icon variant="text" size="small" class="d-none d-sm-inline-flex">
-          <v-icon>mdi-web</v-icon>
-        </v-btn>
-        <v-btn icon variant="text" size="small">
-          <v-badge color="error" dot :content="3">
-            <v-icon>mdi-bell-outline</v-icon>
-          </v-badge>
-        </v-btn>
-        <v-btn icon variant="text" size="small">
-          <v-avatar size="30" color="#1B4B66">
-            <span class="text-white text-caption">TU</span>
-          </v-avatar>
+        <v-btn variant="text" @click="notice.show = false">OK</v-btn>
+      </template>
+    </v-snackbar>
+
+    <!-- ============================================================== -->
+    <!-- APP BAR                                                         -->
+    <!-- ============================================================== -->
+    <v-app-bar density="comfortable" flat border="b">
+      <v-tooltip text="Back to dashboard" location="bottom">
+        <template #activator="{ props: tip }">
+          <v-btn
+            v-bind="tip"
+            icon="mdi-arrow-left"
+            to="/dashboard"
+            aria-label="Back to dashboard"
+          />
+        </template>
+      </v-tooltip>
+
+      <v-app-bar-title class="font-weight-bold">
+        Museum
+        <span
+          v-if="totalCount"
+          class="text-caption text-medium-emphasis font-weight-regular ml-2 d-none d-sm-inline"
+        >
+          {{ totalCount }} artefacts
+        </span>
+      </v-app-bar-title>
+
+      <!-- Time left -->
+      <v-menu
+        v-if="accessGranted"
+        location="bottom end"
+        :close-on-content-click="false"
+      >
+        <template #activator="{ props: menuProps }">
+          <v-tooltip location="bottom" :text="timeTooltip">
+            <template #activator="{ props: tipProps }">
+              <v-btn
+                v-bind="mergeProps(menuProps, tipProps)"
+                variant="tonal"
+                rounded="pill"
+                :color="timeColor"
+                class="text-none px-2 mr-1"
+                aria-label="Time left — open details"
+              >
+                <v-progress-circular
+                  :model-value="timePercent"
+                  :color="timeColor"
+                  size="26"
+                  width="3"
+                  class="mr-2"
+                >
+                  <v-icon size="12">{{ countdownIcon }}</v-icon>
+                </v-progress-circular>
+                <span
+                  class="tabular font-weight-bold"
+                  :class="{ pulse: isFinalCountdown }"
+                >
+                  {{ countdownText || "—" }}
+                </span>
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </template>
+
+        <v-card min-width="280" max-width="320">
+          <v-card-title class="d-flex align-center ga-2 text-subtitle-1">
+            <v-icon :color="timeColor">mdi-timer-outline</v-icon>
+            Your access time
+          </v-card-title>
+          <v-card-text>
+            <div
+              class="text-h4 font-weight-bold tabular"
+              :class="`text-${timeColor}`"
+            >
+              {{ countdownText || "—" }}
+            </div>
+            <div class="text-caption text-medium-emphasis mb-3">
+              {{ timeStatusText }}
+            </div>
+            <v-progress-linear
+              :model-value="timePercent"
+              :color="timeColor"
+              height="8"
+              rounded
+            />
+            <v-list density="compact" class="px-0 mt-2" lines="one">
+              <v-list-item
+                prepend-icon="mdi-ticket-confirmation-outline"
+                title="Ticket"
+                :subtitle="voucherStore.code ?? '—'"
+              />
+              <v-list-item
+                v-if="expiresText"
+                prepend-icon="mdi-clock-end"
+                title="Ends at"
+                :subtitle="expiresText"
+              />
+              <v-list-item
+                prepend-icon="mdi-volume-high"
+                title="Countdown sound"
+                :subtitle="
+                  prefersReducedMotion ? 'Off (reduced motion)' : undefined
+                "
+              >
+                <template #append>
+                  <v-switch
+                    :model-value="!muted"
+                    color="primary"
+                    density="compact"
+                    hide-details
+                    :disabled="prefersReducedMotion"
+                    @update:model-value="toggleMute"
+                  />
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+          <v-card-actions class="px-4 pb-4">
+            <v-btn
+              block
+              variant="flat"
+              color="primary"
+              prepend-icon="mdi-plus-circle-outline"
+              @click="openBuyMore"
+            >
+              Add more time
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-menu>
+
+      <v-tooltip text="Search & browse" location="bottom">
+        <template #activator="{ props: tip }">
+          <v-btn
+            v-bind="tip"
+            icon="mdi-magnify"
+            class="d-md-none"
+            aria-label="Search and browse categories"
+            @click="openSearch"
+          />
+        </template>
+      </v-tooltip>
+
+      <v-tooltip
+        :text="cartIds.size ? `Cart (${cartIds.size})` : 'Cart is empty'"
+        location="bottom"
+      >
+        <template #activator="{ props: tip }">
+          <v-btn v-bind="tip" icon aria-label="Open cart" @click="goCheckout">
+            <v-badge
+              :model-value="cartIds.size > 0"
+              :content="cartIds.size"
+              color="primary"
+            >
+              <v-icon>mdi-cart-outline</v-icon>
+            </v-badge>
+          </v-btn>
+        </template>
+      </v-tooltip>
+    </v-app-bar>
+
+    <!-- ============================================================== -->
+    <!-- CATEGORY EXPLORER (permanent on md+, slide-over on phones)      -->
+    <!-- ============================================================== -->
+    <v-navigation-drawer
+      :model-value="isDesktop || catDrawer"
+      :permanent="isDesktop"
+      :temporary="!isDesktop"
+      location="start"
+      :width="320"
+      @update:model-value="catDrawer = $event"
+    >
+      <div class="pa-3 pb-1">
+        <div class="d-flex align-center mb-2">
+          <span class="text-overline">Explore</span>
+          <v-spacer />
+          <v-btn
+            v-if="!isDesktop"
+            icon="mdi-close"
+            size="small"
+            variant="text"
+            aria-label="Close"
+            @click="catDrawer = false"
+          />
+        </div>
+        <v-text-field
+          ref="searchField"
+          :model-value="searchText"
+          density="comfortable"
+          variant="solo-filled"
+          flat
+          hide-details
+          clearable
+          rounded="lg"
+          prepend-inner-icon="mdi-magnify"
+          placeholder="Search artefacts"
+          @update:model-value="onSearchChanged"
+          @click:clear="onSearchChanged('')"
+        />
+      </div>
+
+      <div
+        v-if="hasFilters"
+        class="px-3 pb-2 d-flex flex-wrap ga-1 align-center"
+      >
+        <v-chip
+          v-if="activeCategory !== ALL"
+          size="small"
+          closable
+          color="primary"
+          variant="tonal"
+          @click:close="setCategory(ALL)"
+        >
+          {{ store.categoryLabel(activeCategory) }}
+        </v-chip>
+        <v-chip
+          v-if="activeSub"
+          size="small"
+          closable
+          color="primary"
+          variant="tonal"
+          @click:close="setSub(null)"
+        >
+          {{ store.subcategoryLabel(activeCategory, activeSub) }}
+        </v-chip>
+        <v-chip
+          v-if="searchText.trim()"
+          size="small"
+          closable
+          variant="tonal"
+          @click:close="onSearchChanged('')"
+        >
+          “{{ searchText.trim() }}”
+        </v-chip>
+        <v-btn variant="text" size="x-small" @click="resetFilters">
+          Clear all
         </v-btn>
       </div>
 
-      <template v-if="subcategories.length" #extension>
-        <v-chip-group
-          :model-value="activeSub"
-          selected-class="text-primary"
-          class="px-2"
-          @update:model-value="setSub"
+      <v-divider />
+
+      <v-list v-model:opened="openGroups" nav density="comfortable">
+        <v-list-item
+          prepend-icon="mdi-view-grid-outline"
+          title="All artefacts"
+          :active="activeCategory === ALL"
+          color="primary"
+          rounded="lg"
+          @click="setCategory(ALL)"
         >
-          <v-chip
-            v-for="s in subcategories"
-            :key="s.slug"
-            :value="s.slug"
-            size="small"
-            variant="outlined"
-            filter
+          <template v-if="activeCategory === ALL && totalCount" #append>
+            <v-chip size="x-small" variant="tonal">{{ totalCount }}</v-chip>
+          </template>
+        </v-list-item>
+
+        <template v-for="c in store.categories" :key="c.slug">
+          <v-list-group
+            v-if="store.subcategoriesOf(c.slug).length"
+            :value="c.slug"
           >
-            {{ s.label }}
-          </v-chip>
-        </v-chip-group>
-      </template>
-    </v-toolbar>
+            <template #activator="{ props: gp }">
+              <v-list-item
+                v-bind="gp"
+                :prepend-icon="categoryIcon(c)"
+                :title="c.label"
+                :active="activeCategory === c.slug && !activeSub"
+                color="primary"
+                rounded="lg"
+                @click="setCategory(c.slug)"
+              />
+            </template>
+            <v-list-item
+              v-for="s in store.subcategoriesOf(c.slug)"
+              :key="s.slug"
+              :title="s.label"
+              :active="activeCategory === c.slug && activeSub === s.slug"
+              color="primary"
+              rounded="lg"
+              @click="pickSub(c.slug, s.slug)"
+            />
+          </v-list-group>
+
+          <v-list-item
+            v-else
+            :prepend-icon="categoryIcon(c)"
+            :title="c.label"
+            :active="activeCategory === c.slug"
+            color="primary"
+            rounded="lg"
+            @click="setCategory(c.slug)"
+          />
+        </template>
+      </v-list>
+    </v-navigation-drawer>
 
     <!-- ============================================================== -->
-    <!-- DESKTOP: stage + details side-by-side (unchanged)              -->
+    <!-- ARTEFACT DETAILS (permanent on lg+, slide-over below)           -->
     <!-- ============================================================== -->
-    <v-row v-if="!isMobile" no-gutters class="explorer__top">
-      <!-- Stage -->
-      <v-col cols="12" md="8" class="explorer__stage-col">
-        <div ref="stageEl" class="stage">
+    <v-navigation-drawer
+      :model-value="isWide || detailsOpen"
+      :permanent="isWide"
+      :temporary="!isWide"
+      location="end"
+      :width="isWide ? 380 : 340"
+      @update:model-value="detailsOpen = $event"
+    >
+      <div v-if="selectedId" class="pa-4">
+        <div class="d-flex align-start ga-2">
+          <div class="text-body-2 text-medium-emphasis flex-grow-1">
+            {{ categoryText }}
+          </div>
+          <v-btn
+            v-if="!isWide"
+            icon="mdi-close"
+            size="small"
+            variant="text"
+            aria-label="Close details"
+            @click="detailsOpen = false"
+          />
+        </div>
+        <h1 class="text-h5 my-1">{{ title }}</h1>
+        <div v-if="priceText" class="text-h6 text-primary mb-3">
+          {{ priceText }}
+        </div>
+
+        <template v-if="artefact">
+          <p class="explorer__desc mb-4">{{ artefact.description }}</p>
+          <v-divider class="mb-2" />
+          <v-list density="compact" class="px-0" lines="one">
+            <v-list-item
+              v-if="artefact.region"
+              prepend-icon="mdi-map-marker-outline"
+              title="Region"
+              :subtitle="artefact.region"
+            />
+            <v-list-item
+              prepend-icon="mdi-update"
+              title="Updated"
+              :subtitle="updatedText"
+            />
+          </v-list>
+          <template v-if="artefact.communities.length">
+            <div class="text-overline mt-2">Communities</div>
+            <div class="d-flex flex-wrap ga-1">
+              <v-chip v-for="c in artefact.communities" :key="c" size="small">
+                {{ c }}
+              </v-chip>
+            </div>
+          </template>
+          <template v-if="artefact.tags.length">
+            <div class="text-overline mt-3">Tags</div>
+            <div class="d-flex flex-wrap ga-1">
+              <v-chip
+                v-for="t in artefact.tags"
+                :key="t"
+                size="small"
+                variant="outlined"
+              >
+                {{ t }}
+              </v-chip>
+            </div>
+          </template>
+        </template>
+        <v-skeleton-loader v-else type="paragraph, chip, paragraph" />
+      </div>
+      <div v-else class="pa-6 text-medium-emphasis">
+        Select an artefact to see its story, origin and price.
+      </div>
+    </v-navigation-drawer>
+
+    <!-- ============================================================== -->
+    <!-- MAIN                                                            -->
+    <!-- ============================================================== -->
+    <v-main class="explorer__main">
+      <div class="explorer__col">
+        <!-- Time-left bar -->
+        <v-progress-linear
+          v-if="accessGranted"
+          :model-value="timePercent"
+          :color="timeColor"
+          height="4"
+          class="flex-grow-0"
+          aria-label="Time left"
+        />
+
+        <!-- Quick category chips (phones / tablets) -->
+        <div v-if="!isDesktop" class="px-2 pt-2 flex-grow-0">
+          <v-slide-group show-arrows="never" class="mb-1">
+            <v-slide-group-item>
+              <v-chip
+                class="mr-2"
+                :color="activeCategory === ALL ? 'primary' : undefined"
+                :variant="activeCategory === ALL ? 'flat' : 'tonal'"
+                @click="setCategory(ALL)"
+              >
+                All
+              </v-chip>
+            </v-slide-group-item>
+            <v-slide-group-item v-for="c in store.categories" :key="c.slug">
+              <v-chip
+                class="mr-2"
+                :prepend-icon="categoryIcon(c)"
+                :color="activeCategory === c.slug ? 'primary' : undefined"
+                :variant="activeCategory === c.slug ? 'flat' : 'tonal'"
+                @click="setCategory(c.slug)"
+              >
+                {{ c.label }}
+              </v-chip>
+            </v-slide-group-item>
+          </v-slide-group>
+          <v-slide-group v-if="subcategories.length" show-arrows="never">
+            <v-slide-group-item v-for="s in subcategories" :key="s.slug">
+              <v-chip
+                class="mr-2"
+                size="small"
+                :color="activeSub === s.slug ? 'primary' : undefined"
+                :variant="activeSub === s.slug ? 'flat' : 'outlined'"
+                @click="setSub(activeSub === s.slug ? null : s.slug)"
+              >
+                {{ s.label }}
+              </v-chip>
+            </v-slide-group-item>
+          </v-slide-group>
+        </div>
+
+        <!-- ======================== 3D STAGE ======================== -->
+        <div
+          ref="stageEl"
+          class="stage"
+          :class="[`stage--${stageBg}`, { 'stage--pseudo-fs': pseudoFs }]"
+        >
           <model-viewer
             v-if="glbUrl"
             :key="`${glbUrl}::${modelKey}`"
@@ -152,14 +491,16 @@
             class="stage__viewer"
             :src="glbUrl"
             :alt="title || 'Museum artefact'"
-            :auto-rotate="autoRotate ? '' : null"
-            :camera-controls="true"
-            touch-action="pan-y"
+            :auto-rotate="autoRotate && !prefersReducedMotion ? '' : null"
+            camera-controls
+            autoplay
+            ar
+            ar-modes="webxr scene-viewer quick-look"
             interaction-prompt="none"
             environment-image="neutral"
-            shadow-intensity="1"
+            :shadow-intensity="shadowOn ? 1 : 0"
             :shadow-softness="0.9"
-            :exposure="1.05"
+            :exposure="exposure"
             loading="eager"
             reveal="auto"
             min-field-of-view="12deg"
@@ -169,473 +510,412 @@
             @error="onModelError"
           />
 
-          <div v-else-if="!selectedId" class="stage__empty">
-            <v-icon size="48" class="mb-2">mdi-cube-off-outline</v-icon>
+          <v-img
+            v-if="coverUrl && modelLoading && !glbError"
+            :src="coverUrl"
+            cover
+            class="stage__poster"
+          />
+
+          <!-- Empty / error / loading states -->
+          <div v-if="!selectedId" class="stage__status">
+            <v-icon size="48">mdi-cube-outline</v-icon>
             <div>Pick an artefact below to view it in 3D.</div>
           </div>
-
-          <div v-else-if="glbError" class="stage__empty">
-            <v-icon size="48" class="mb-2">mdi-alert-circle-outline</v-icon>
-            <div>This artefact's 3D model could not be loaded.</div>
-            <v-btn
-              class="mt-3"
-              size="small"
-              variant="tonal"
-              prepend-icon="mdi-refresh"
-              @click="retryModel"
-            >
-              Retry
-            </v-btn>
+          <div v-else-if="!glbUrl && !artefact" class="stage__status">
+            <v-progress-circular indeterminate size="36" />
           </div>
-
-          <div v-else class="stage__empty">
-            <v-icon size="48" class="mb-2">mdi-cube-off-outline</v-icon>
+          <div v-else-if="!glbUrl" class="stage__status">
+            <v-icon size="48">mdi-cube-off-outline</v-icon>
             <div>This artefact has no 3D model yet.</div>
           </div>
-
-          <v-progress-linear
-            v-if="glbUrl && modelLoading && progress > 0"
-            :model-value="progress"
-            color="primary"
-            height="3"
-            rounded
-            class="stage__progress"
-          />
+          <div v-else-if="modelLoading && !glbError" class="stage__status">
+            <v-progress-circular
+              v-if="progress <= 0"
+              indeterminate
+              size="44"
+              width="4"
+            />
+            <v-progress-circular
+              v-else
+              :model-value="progress"
+              size="44"
+              width="4"
+            >
+              <span class="text-caption tabular">
+                {{ Math.round(progress) }}
+              </span>
+            </v-progress-circular>
+            <div class="text-caption">Loading 3D model…</div>
+          </div>
 
           <v-alert
             v-if="glbError"
             type="error"
             density="compact"
-            variant="tonal"
+            variant="flat"
             class="stage__alert"
           >
             {{ glbErrorMessage }}
             <template #append>
-              <v-btn
-                size="small"
-                variant="text"
-                :loading="modelLoading"
-                @click="retryModel"
-              >
+              <v-btn size="small" variant="text" @click="retryModel">
                 Retry
               </v-btn>
             </template>
           </v-alert>
 
-          <div v-if="title" class="stage__caption">
-            <div class="text-subtitle-1 font-weight-medium">{{ title }}</div>
-            <div class="text-caption">{{ categoryText }}</div>
+          <!-- Top overlay -->
+          <div v-if="selectedId" class="stage__top">
+            <v-chip size="small" class="stage__glass text-truncate">
+              {{ categoryText }}
+            </v-chip>
+            <v-chip size="small" class="stage__glass ml-auto flex-shrink-0">
+              <span class="tabular">
+                {{ selIndex + 1 }} / {{ totalCount || thumbs.length }}
+              </span>
+            </v-chip>
           </div>
 
-          <v-btn
-            icon="mdi-chevron-left"
-            variant="tonal"
-            class="stage__nav stage__nav--prev"
-            aria-label="Previous artefact ([)"
-            :disabled="!canStep(-1)"
-            @click="stepArtefact(-1)"
-          />
-          <v-btn
-            icon="mdi-chevron-right"
-            variant="tonal"
-            class="stage__nav stage__nav--next"
-            aria-label="Next artefact (])"
-            :disabled="!canStep(1)"
-            @click="stepArtefact(1)"
-          />
+          <!-- Prev / next -->
+          <v-tooltip
+            v-for="n in [-1, 1] as const"
+            :key="n"
+            :text="n < 0 ? 'Previous  [' : 'Next  ]'"
+            location="top"
+            :attach="overlayAttach"
+          >
+            <template #activator="{ props: tip }">
+              <v-btn
+                v-bind="tip"
+                :icon="n < 0 ? 'mdi-chevron-left' : 'mdi-chevron-right'"
+                variant="flat"
+                :size="isDesktop ? 'default' : 'small'"
+                class="stage__glass stage__nav"
+                :class="n < 0 ? 'stage__nav--prev' : 'stage__nav--next'"
+                :disabled="!canStep(n)"
+                :aria-label="n < 0 ? 'Previous artefact' : 'Next artefact'"
+                @click="stepArtefact(n)"
+              />
+            </template>
+          </v-tooltip>
 
-          <div
-            class="stage__controls"
+          <!-- Player controls -->
+          <v-sheet
+            rounded="pill"
+            elevation="6"
+            class="stage__glass stage__controls d-flex align-center px-1"
             role="toolbar"
             aria-label="3D viewer controls"
           >
-            <v-btn
+            <v-tooltip
               v-for="b in controls"
               :key="b.icon"
-              :icon="b.icon"
-              size="small"
-              :variant="b.active ? 'flat' : 'text'"
-              :color="b.active ? 'primary' : undefined"
-              :aria-label="b.label"
-              :aria-pressed="b.active === undefined ? undefined : b.active"
-              :title="b.label"
-              :disabled="!glbUrl"
-              @click="b.run"
-            />
-            <v-menu location="top" :close-on-content-click="false">
-              <template #activator="{ props }">
+              :text="b.label"
+              location="top"
+              :attach="overlayAttach"
+            >
+              <template #activator="{ props: tip }">
                 <v-btn
-                  v-bind="props"
-                  icon="mdi-keyboard-outline"
-                  size="small"
-                  variant="text"
-                  aria-label="Keyboard and controller shortcuts"
-                  title="Shortcuts"
+                  v-bind="tip"
+                  :icon="b.icon"
+                  :size="isDesktop ? 'default' : 'small'"
+                  :variant="b.active ? 'flat' : 'text'"
+                  :color="b.active ? 'primary' : undefined"
+                  :aria-label="b.label"
+                  :aria-pressed="b.active === undefined ? undefined : b.active"
+                  :disabled="!glbUrl"
+                  @click="b.run"
                 />
               </template>
-              <v-card min-width="300">
-                <v-card-title class="text-subtitle-1">Controls</v-card-title>
+            </v-tooltip>
+
+            <v-menu
+              location="top"
+              :close-on-content-click="false"
+              :attach="overlayAttach"
+            >
+              <template #activator="{ props: menuProps }">
+                <v-tooltip
+                  text="More: snapshot, AR, lighting"
+                  location="top"
+                  :attach="overlayAttach"
+                >
+                  <template #activator="{ props: tipProps }">
+                    <v-btn
+                      v-bind="mergeProps(menuProps, tipProps)"
+                      icon="mdi-dots-vertical"
+                      :size="isDesktop ? 'default' : 'small'"
+                      variant="text"
+                      aria-label="More viewer options"
+                      :disabled="!glbUrl"
+                    />
+                  </template>
+                </v-tooltip>
+              </template>
+
+              <v-card min-width="260" max-width="300">
                 <v-list density="compact">
                   <v-list-item
-                    title="Mouse / touch"
-                    subtitle="Drag to orbit, wheel or pinch to zoom, right-drag to pan"
+                    prepend-icon="mdi-camera-outline"
+                    title="Save snapshot"
+                    @click="snapshot"
                   />
                   <v-list-item
-                    v-for="k in shortcuts"
-                    :key="k.keys"
-                    :title="k.label"
-                  >
+                    v-if="canAR"
+                    prepend-icon="mdi-augmented-reality"
+                    title="View in your space (AR)"
+                    @click="activateAR"
+                  />
+                  <v-list-item
+                    v-if="animationCount"
+                    :prepend-icon="animPlaying ? 'mdi-pause' : 'mdi-play'"
+                    :title="animPlaying ? 'Pause animation' : 'Play animation'"
+                    @click="toggleAnimation"
+                  />
+                  <v-list-item
+                    v-if="isDesktop"
+                    prepend-icon="mdi-keyboard-outline"
+                    title="Keyboard shortcuts"
+                    @click="shortcutsOpen = true"
+                  />
+                  <v-divider class="my-1" />
+                  <v-list-item title="Background">
                     <template #append>
-                      <kbd class="stage__kbd">{{ k.keys }}</kbd>
+                      <v-btn-toggle
+                        v-model="stageBg"
+                        mandatory
+                        density="compact"
+                        variant="outlined"
+                        divided
+                      >
+                        <v-btn
+                          value="dark"
+                          icon="mdi-weather-night"
+                          size="small"
+                        />
+                        <v-btn
+                          value="light"
+                          icon="mdi-white-balance-sunny"
+                          size="small"
+                        />
+                      </v-btn-toggle>
                     </template>
                   </v-list-item>
-                  <v-list-item
-                    title="Gamepad"
-                    subtitle="Left stick orbit, right stick zoom, A auto-rotate, B reset, LB/RB browse"
-                  />
+                  <v-list-item title="Brightness">
+                    <v-slider
+                      v-model="exposure"
+                      :min="0.4"
+                      :max="2"
+                      :step="0.05"
+                      density="compact"
+                      hide-details
+                      color="primary"
+                      class="mt-1"
+                    />
+                  </v-list-item>
+                  <v-list-item title="Soft shadow">
+                    <template #append>
+                      <v-switch
+                        v-model="shadowOn"
+                        color="primary"
+                        density="compact"
+                        hide-details
+                      />
+                    </template>
+                  </v-list-item>
                 </v-list>
               </v-card>
             </v-menu>
-          </div>
-        </div>
-      </v-col>
+          </v-sheet>
 
-      <!-- Details -->
-      <v-col cols="12" md="4" class="explorer__detail-col">
-        <div v-if="selectedId" class="pa-4 pa-md-6">
-          <div class="text-body-2 text-medium-emphasis">{{ categoryText }}</div>
-          <h1 class="text-h5 my-1">{{ title }}</h1>
-          <div v-if="artefact" class="text-h6 text-primary mb-4">
-            {{ priceText }}
-          </div>
-
-          <template v-if="artefact">
-            <p class="explorer__description mb-5">{{ artefact.description }}</p>
-
-            <dl class="explorer__meta">
-              <template v-if="artefact.region">
-                <dt>Region</dt>
-                <dd>{{ artefact.region }}</dd>
-              </template>
-              <template v-if="artefact.communities.length">
-                <dt>Communities</dt>
-                <dd>
-                  <v-chip
-                    v-for="c in artefact.communities"
-                    :key="c"
-                    size="small"
-                    class="mr-1 mb-1"
-                  >
-                    {{ c }}
-                  </v-chip>
-                </dd>
-              </template>
-              <template v-if="artefact.tags.length">
-                <dt>Tags</dt>
-                <dd>
-                  <v-chip
-                    v-for="t in artefact.tags"
-                    :key="t"
-                    size="small"
-                    variant="outlined"
-                    class="mr-1 mb-1"
-                  >
-                    {{ t }}
-                  </v-chip>
-                </dd>
-              </template>
-              <dt>Updated</dt>
-              <dd>{{ updatedText }}</dd>
-            </dl>
-            <v-divider class="mt-4" />
-
-            <div class="d-flex flex-wrap ga-3 mt-4">
-              <v-btn
-                variant="outlined"
-                prepend-icon="mdi-cart-plus"
-                :disabled="cartHasItem"
-                @click="addToCart"
-              >
-                {{ cartHasItem ? "Added to cart" : "Add to cart" }}
-              </v-btn>
-
-              <v-btn
-                v-if="cartHasItem"
-                variant="flat"
-                color="primary"
-                prepend-icon="mdi-cart-check"
-                to="/museum/checkout"
-              >
-                Check out
-              </v-btn>
-            </div>
-          </template>
-          <v-skeleton-loader v-else type="paragraph, chip, paragraph" />
-        </div>
-
-        <div v-else class="pa-6 text-medium-emphasis">
-          Select an artefact to see its story, origin and price.
-        </div>
-      </v-col>
-    </v-row>
-
-    <!-- ============================================================== -->
-    <!-- MOBILE: vertical snap-scroll feed (TikTok / Reels / Shorts)    -->
-    <!-- ============================================================== -->
-    <div
-      v-else
-      ref="feedEl"
-      class="feed"
-      role="feed"
-      aria-label="Artefact gallery"
-    >
-      <template v-if="thumbsLoading && !thumbs.length">
-        <section
-          v-for="n in 3"
-          :key="n"
-          class="feed__card feed__card--skeleton"
-        >
-          <v-skeleton-loader type="image" height="100%" />
-        </section>
-      </template>
-
-      <v-alert
-        v-else-if="thumbsError"
-        type="error"
-        variant="tonal"
-        class="ma-4"
-      >
-        {{ thumbsError }}
-        <template #append>
-          <v-btn size="small" variant="text" @click="loadThumbs()">
-            Retry
-          </v-btn>
-        </template>
-      </v-alert>
-
-      <div v-else-if="!thumbs.length" class="feed__empty text-medium-emphasis">
-        No published artefacts in this filter yet.
-      </div>
-
-      <section
-        v-for="(t, i) in thumbs"
-        v-else
-        :key="t.id"
-        class="feed__card"
-        :class="{ 'feed__card--active': t.id === selectedId }"
-        :data-id="t.id"
-        :aria-current="t.id === selectedId ? 'true' : undefined"
-      >
-        <!-- Viewer -->
-        <div class="feed__stage" @click="handleStageTap">
-          <model-viewer
-            v-if="t.id === selectedId && mediaOf(t.mediaUrls).glb"
-            :key="`${mediaOf(t.mediaUrls).glb}::${modelKey}`"
-            class="feed__viewer"
-            :src="mediaOf(t.mediaUrls).glb!"
-            :alt="t.title"
-            :auto-rotate="autoRotate ? '' : null"
-            :camera-controls="true"
-            touch-action="pan-y"
-            interaction-prompt="none"
-            environment-image="neutral"
-            shadow-intensity="1"
-            :shadow-softness="0.9"
-            :exposure="1.05"
-            loading="eager"
-            reveal="auto"
-            min-field-of-view="12deg"
-            max-field-of-view="45deg"
-            @progress="onProgress"
-            @load="onLoad"
-            @error="onModelError"
+          <v-progress-linear
+            v-if="glbUrl && modelLoading && progress > 0"
+            :model-value="progress"
+            height="3"
+            class="stage__progress"
           />
-          <div v-else-if="!mediaOf(t.mediaUrls).glb" class="feed__empty-stage">
-            <v-icon size="48" class="mb-2">mdi-cube-off-outline</v-icon>
-            <div class="text-body-2">No 3D model yet</div>
-          </div>
-          <div v-else class="feed__loading-stage">
-            <v-progress-circular indeterminate color="primary" size="32" />
-            <div class="text-caption mt-2">Loading 3D model…</div>
-          </div>
-
-          <!-- Floating title -->
-          <div class="feed__caption">
-            <div class="text-subtitle-1 font-weight-bold">{{ t.title }}</div>
-            <div class="text-caption opacity-80">
-              {{ categoryLabelFor(t) }}
-            </div>
-          </div>
-
-          <!-- Vertical side rail (like TikTok's like/share/comments) -->
-          <div class="feed__rail">
-            <v-btn
-              icon
-              variant="text"
-              class="feed__rail-btn"
-              :title="cartHasItemFor(t) ? 'In cart' : 'Add to cart'"
-              :aria-label="cartHasItemFor(t) ? 'In cart' : 'Add to cart'"
-              @click.stop="addToCartFor(t)"
-            >
-              <v-icon size="28">
-                {{ cartHasItemFor(t) ? "mdi-cart-check" : "mdi-cart-plus" }}
-              </v-icon>
-              <span class="feed__rail-label">
-                {{ cartHasItemFor(t) ? "In cart" : "Add" }}
-              </span>
-            </v-btn>
-
-            <v-btn
-              icon
-              variant="text"
-              class="feed__rail-btn"
-              title="Retry 3D"
-              aria-label="Retry 3D"
-              @click.stop="retryModel"
-            >
-              <v-icon size="28">mdi-refresh</v-icon>
-              <span class="feed__rail-label">Retry</span>
-            </v-btn>
-
-            <v-btn
-              icon
-              variant="text"
-              class="feed__rail-btn"
-              :title="autoRotate ? 'Pause rotation' : 'Auto-rotate'"
-              :aria-label="autoRotate ? 'Pause rotation' : 'Auto-rotate'"
-              @click.stop="toggleRotate"
-            >
-              <v-icon size="28">
-                {{ autoRotate ? "mdi-rotate-3d-variant" : "mdi-rotate-3d" }}
-              </v-icon>
-              <span class="feed__rail-label">Spin</span>
-            </v-btn>
-          </div>
-
-          <!-- Details drawer -->
-          <div
-            class="feed__details"
-            :class="{ 'is-open': detailsOpenId === t.id }"
-          >
-            <button
-              class="feed__handle"
-              type="button"
-              :aria-expanded="detailsOpenId === t.id ? 'true' : 'false'"
-              @click.stop="toggleDetails(t.id)"
-            >
-              <span class="feed__handle-bar" />
-              <span class="feed__handle-hint">
-                {{ detailsOpenId === t.id ? "Close" : "Details" }}
-              </span>
-            </button>
-            <div class="feed__details-body">
-              <div v-if="store.byId[t.id]" class="feed__details-inner">
-                <div class="text-h6 text-primary mb-2">
-                  {{ priceTextFor(t) }}
-                </div>
-                <p class="feed__description">
-                  {{ store.byId[t.id].description }}
-                </p>
-
-                <dl class="feed__meta">
-                  <template v-if="store.byId[t.id].region">
-                    <dt>Region</dt>
-                    <dd>{{ store.byId[t.id].region }}</dd>
-                  </template>
-                  <template v-if="store.byId[t.id].communities.length">
-                    <dt>Communities</dt>
-                    <dd>
-                      <v-chip
-                        v-for="c in store.byId[t.id].communities"
-                        :key="c"
-                        size="x-small"
-                        class="mr-1 mb-1"
-                      >
-                        {{ c }}
-                      </v-chip>
-                    </dd>
-                  </template>
-                </dl>
-
-                <div class="d-flex flex-wrap ga-2 mt-3">
-                  <v-btn
-                    size="small"
-                    variant="outlined"
-                    prepend-icon="mdi-cart-plus"
-                    :disabled="cartHasItemFor(t)"
-                    @click="addToCartFor(t)"
-                  >
-                    {{ cartHasItemFor(t) ? "Added" : "Add to cart" }}
-                  </v-btn>
-                  <v-btn
-                    v-if="cartHasItem"
-                    size="small"
-                    variant="flat"
-                    color="primary"
-                    prepend-icon="mdi-cart-check"
-                    to="/museum/checkout"
-                  >
-                    Check out
-                  </v-btn>
-                </div>
-              </div>
-              <v-skeleton-loader v-else type="paragraph" />
-            </div>
-          </div>
-
-          <!-- Inline filmstrip -->
-          <div class="feed__strip">
-            <button
-              v-for="t2 in thumbs"
-              :key="`strip-${t2.id}`"
-              type="button"
-              class="feed__strip-thumb"
-              :class="{ 'is-active': t2.id === selectedId }"
-              :aria-label="t2.title"
-              @click.stop="jumpTo(t2)"
-            >
-              <v-img
-                v-if="coverOf(t2)"
-                :src="coverOf(t2)!"
-                aspect-ratio="4/3"
-                cover
-                class="feed__strip-img"
-              />
-              <div v-else class="feed__strip-img feed__strip-img--none">
-                <v-icon size="16">mdi-cube-outline</v-icon>
-              </div>
-            </button>
-          </div>
         </div>
-      </section>
 
-      <!-- Load-more sentinel (fires when scrolled past last card) -->
-      <div
-        v-if="hasNext && !thumbsLoading"
-        class="feed__sentinel"
-        aria-hidden="true"
-      />
-    </div>
-  </v-container>
+        <!-- ================== NOW VIEWING BAR ================== -->
+        <v-sheet
+          border="t"
+          class="d-flex align-center ga-2 px-3 py-2 flex-grow-0"
+        >
+          <div class="flex-grow-1" style="min-width: 0">
+            <div class="text-subtitle-1 font-weight-medium text-truncate">
+              {{ title || "Select an artefact" }}
+            </div>
+            <div class="text-caption text-medium-emphasis text-truncate">
+              {{ categoryText }}
+              <template v-if="priceText"> · {{ priceText }}</template>
+            </div>
+          </div>
+
+          <v-tooltip text="Story & details" location="top">
+            <template #activator="{ props: tip }">
+              <v-btn
+                v-bind="tip"
+                icon="mdi-information-outline"
+                variant="tonal"
+                class="d-lg-none"
+                :disabled="!selectedId"
+                aria-label="Artefact details"
+                @click="detailsOpen = true"
+              />
+            </template>
+          </v-tooltip>
+
+          <v-btn
+            :color="inCart ? undefined : 'primary'"
+            :variant="inCart ? 'tonal' : 'flat'"
+            :prepend-icon="inCart ? 'mdi-cart-check' : 'mdi-cart-plus'"
+            :disabled="!artefact"
+            class="text-none"
+            @click="inCart ? goCheckout() : addToCart()"
+          >
+            {{ inCart ? "Check out" : "Add to cart" }}
+          </v-btn>
+        </v-sheet>
+
+        <!-- ================== FILMSTRIP ================== -->
+        <v-sheet border="t" class="flex-grow-0 py-1">
+          <div
+            v-if="thumbsError"
+            class="d-flex align-center ga-2 px-3 py-2 text-error"
+          >
+            <v-icon>mdi-alert-circle-outline</v-icon>
+            <span class="text-body-2 flex-grow-1">{{ thumbsError }}</span>
+            <v-btn size="small" variant="text" @click="loadThumbs()">
+              Retry
+            </v-btn>
+          </div>
+
+          <div
+            v-else-if="!thumbsLoading && !thumbs.length"
+            class="d-flex align-center ga-2 px-3 py-3 text-medium-emphasis"
+          >
+            <span class="text-body-2 flex-grow-1">
+              No published artefacts match this filter yet.
+            </span>
+            <v-btn
+              v-if="hasFilters"
+              size="small"
+              variant="tonal"
+              prepend-icon="mdi-filter-remove-outline"
+              @click="resetFilters"
+            >
+              Clear filters
+            </v-btn>
+          </div>
+
+          <v-slide-group
+            v-else
+            :model-value="selectedId"
+            center-active
+            show-arrows
+          >
+            <template v-if="thumbsLoading && !thumbs.length">
+              <v-slide-group-item v-for="n in 8" :key="`sk-${n}`">
+                <v-skeleton-loader type="image" width="112" class="ma-1" />
+              </v-slide-group-item>
+            </template>
+
+            <v-slide-group-item v-for="t in thumbs" :key="t.id" :value="t.id">
+              <v-tooltip :text="t.title" location="top">
+                <template #activator="{ props: tip }">
+                  <v-card
+                    v-bind="tip"
+                    :variant="t.id === selectedId ? 'tonal' : 'outlined'"
+                    :color="t.id === selectedId ? 'primary' : undefined"
+                    class="thumb ma-1"
+                    :class="{ 'thumb--active': t.id === selectedId }"
+                    :aria-current="t.id === selectedId ? 'true' : undefined"
+                    @click="select(t)"
+                  >
+                    <v-img
+                      v-if="coverOf(t)"
+                      :src="coverOf(t)!"
+                      :aspect-ratio="4 / 3"
+                      cover
+                    />
+                    <div
+                      v-else
+                      class="thumb__none d-flex align-center justify-center"
+                    >
+                      <v-icon>mdi-cube-outline</v-icon>
+                    </div>
+                    <div class="text-caption text-truncate px-2 py-1">
+                      {{ t.title }}
+                    </div>
+                  </v-card>
+                </template>
+              </v-tooltip>
+            </v-slide-group-item>
+
+            <v-slide-group-item v-if="hasNext">
+              <v-btn
+                variant="tonal"
+                class="ma-1 thumb thumb--more"
+                :loading="thumbsLoading"
+                prepend-icon="mdi-plus"
+                @click="loadThumbs(true)"
+              >
+                More
+              </v-btn>
+            </v-slide-group-item>
+          </v-slide-group>
+        </v-sheet>
+      </div>
+    </v-main>
+
+    <!-- ============ Keyboard shortcuts ============ -->
+    <v-dialog v-model="shortcutsOpen" max-width="420" z-index="3200">
+      <v-card>
+        <v-card-title class="text-subtitle-1">Controls</v-card-title>
+        <v-list density="compact">
+          <v-list-item
+            title="Mouse / touch"
+            subtitle="Drag to orbit, wheel or pinch to zoom, right-drag to pan"
+          />
+          <v-list-item v-for="k in shortcuts" :key="k.keys" :title="k.label">
+            <template #append>
+              <kbd class="explorer__kbd">{{ k.keys }}</kbd>
+            </template>
+          </v-list-item>
+          <v-list-item
+            title="Gamepad"
+            subtitle="Left stick orbit, right stick zoom, A auto-rotate, B reset, LB/RB browse"
+          />
+        </v-list>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="shortcutsOpen = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-layout>
 </template>
 
 <script setup lang="ts">
 import {
   ref,
+  reactive,
   computed,
   nextTick,
   watch,
+  mergeProps,
   onMounted,
   onBeforeUnmount,
 } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useDisplay } from "vuetify";
 import {
   useArtefactsStore,
   type Artefact,
   type ThumbItem,
   type ArtefactFilterInput,
 } from "@/stores/artefacts";
-import { useVoucherStore, TOKEN_RE } from "@/stores/vouchers";
+import { useVoucherStore } from "@/stores/vouchers";
 import VoucherPurchaseDialog from "@/components/dialogs/VoucherPurchase.vue";
 
 interface ModelViewerEl extends HTMLElement {
@@ -645,49 +925,263 @@ interface ModelViewerEl extends HTMLElement {
   getCameraOrbit(): { theta: number; phi: number; radius: number };
   getFieldOfView(): number;
   jumpCameraToGoal(): void;
+  canActivateAR?: boolean;
+  activateAR?: () => Promise<void>;
+  toBlob?: (o?: { mimeType?: string; idealAspect?: boolean }) => Promise<Blob>;
+  availableAnimations?: string[];
+  paused?: boolean;
+  play?: () => void;
+  pause?: () => void;
 }
 
 const ALL = "__all__";
-const PAGE_SIZE = 10;
-const PREFETCH_RADIUS = 5;
+const PAGE_SIZE = 12;
+const PREFETCH_RADIUS = 4;
 const CART_STORAGE_KEY = "tukema.cart";
-const MOBILE_BREAKPOINT = 960;
+const MUTE_STORAGE_KEY = "tukema.voucher.mute";
+const LOW_MS = 5 * 60_000;
 
 /* ------------------------------------------------------------------ */
-/* Stores / state                                                      */
+/* Stores / layout                                                     */
 /* ------------------------------------------------------------------ */
 
 const store = useArtefactsStore();
 const voucherStore = useVoucherStore();
 const route = useRoute();
 const router = useRouter();
+const display = useDisplay();
+
+/* md+ : categories permanent · lg+ : details permanent */
+const isDesktop = computed(() => display.mdAndUp.value);
+const isWide = computed(() => display.lgAndUp.value);
+
+const catDrawer = ref(false);
+const detailsOpen = ref(false);
+watch(isDesktop, () => {
+  catDrawer.value = false;
+  detailsOpen.value = false;
+});
 
 const accessGranted = computed(() => voucherStore.isRedeemed);
 const validating = computed(
   () =>
     voucherStore.status === "checking" || voucherStore.status === "redeeming",
 );
-const remainingLabel = computed(() => voucherStore.remainingLabel ?? "");
-
-/* ------------------------------------------------------------------ */
-/* Hard gate                                                           */
-/* ------------------------------------------------------------------ */
-
 const locked = computed(() => !accessGranted.value && !validating.value);
+const buyOpen = ref(false);
+const openBuyMore = () => (buyOpen.value = true);
+
+/* ------------------------------------------------------------------ */
+/* Notices                                                             */
+/* ------------------------------------------------------------------ */
+
+const notice = reactive({
+  show: false,
+  text: "",
+  color: "info",
+  action: false,
+});
+function notify(text: string, color = "info", action = false) {
+  notice.text = text;
+  notice.color = color;
+  notice.action = action;
+  notice.show = true;
+}
+
+/* ------------------------------------------------------------------ */
+/* Time left                                                           */
+/* ------------------------------------------------------------------ */
+
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, v));
+
+const countdownText = computed(() =>
+  voucherStore.isFinalCountdown
+    ? voucherStore.remainingLabelFine
+    : voucherStore.remainingLabel,
+);
+const isFinalCountdown = computed(() => voucherStore.isFinalCountdown);
+const countdownIcon = computed(() =>
+  isFinalCountdown.value ? "mdi-timer-alert-outline" : "mdi-timer-outline",
+);
+
+type TimeLevel = "ok" | "low" | "final" | "critical";
+const timeLevel = computed<TimeLevel>(() => {
+  const ms = voucherStore.remainingMs;
+  if (isFinalCountdown.value) return ms <= 10_000 ? "critical" : "final";
+  return ms <= LOW_MS ? "low" : "ok";
+});
+const timeColor = computed(
+  () =>
+    ({ ok: "success", low: "warning", final: "warning", critical: "error" })[
+      timeLevel.value
+    ],
+);
+const timeStatusText = computed(
+  () =>
+    ({
+      ok: "You have plenty of time.",
+      low: "Less than 5 minutes left.",
+      final: "Wrapping up soon.",
+      critical: "Access ends in seconds.",
+    })[timeLevel.value],
+);
+
+/* Session length is captured when a ticket starts so we can show a ring. */
+const sessionTotal = ref(0);
+const timePercent = computed(() =>
+  Math.round(
+    clamp(voucherStore.remainingMs / Math.max(sessionTotal.value, 1), 0, 1) *
+      100,
+  ),
+);
+
+const expiresText = computed(() => {
+  const v = voucherStore.activeUntil as unknown;
+  if (!v) return "";
+  const d = new Date(v as string | number | Date);
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleTimeString("en-KE", { timeStyle: "short" });
+});
+const timeTooltip = computed(() =>
+  countdownText.value
+    ? `${countdownText.value} left · tap for details`
+    : "Time left",
+);
+
+/* ------------------------------------------------------------------ */
+/* Cue sound (Web Audio)                                               */
+/* ------------------------------------------------------------------ */
+
+const muted = ref(false);
+const prefersReducedMotion = ref(false);
+const soundDisabled = computed(() => muted.value || prefersReducedMotion.value);
+
+let audioCtx: AudioContext | null = null;
+let reducedMq: MediaQueryList | null = null;
+const onReducedChange = (e: MediaQueryListEvent) => {
+  prefersReducedMotion.value = e.matches;
+};
+
+function readMuteState() {
+  try {
+    muted.value = sessionStorage.getItem(MUTE_STORAGE_KEY) === "1";
+  } catch {
+    muted.value = false;
+  }
+}
+function toggleMute() {
+  muted.value = !muted.value;
+  try {
+    sessionStorage.setItem(MUTE_STORAGE_KEY, muted.value ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+  if (!muted.value) void beep([{ freq: 660, dur: 0.08, gain: 0.06 }]);
+}
+function detectReducedMotion() {
+  if (typeof window === "undefined" || !window.matchMedia) return;
+  reducedMq = window.matchMedia("(prefers-reduced-motion: reduce)");
+  prefersReducedMotion.value = reducedMq.matches;
+  reducedMq.addEventListener?.("change", onReducedChange);
+}
+function unlockAudio() {
+  if (audioCtx) return;
+  try {
+    const Ctx =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    audioCtx = new Ctx();
+  } catch {
+    audioCtx = null;
+  }
+}
+
+type Beep = { freq: number; dur: number; gain: number; delay?: number };
+async function beep(beeps: Beep[]) {
+  if (soundDisabled.value || !audioCtx) return;
+  try {
+    if (audioCtx.state === "suspended") await audioCtx.resume();
+    const t0 = audioCtx.currentTime;
+    for (const b of beeps) {
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      const at = t0 + (b.delay ?? 0);
+      osc.type = "sine";
+      osc.frequency.value = b.freq;
+      g.gain.setValueAtTime(0, at);
+      g.gain.linearRampToValueAtTime(b.gain, at + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + b.dur);
+      osc.connect(g).connect(audioCtx.destination);
+      osc.start(at);
+      osc.stop(at + b.dur + 0.02);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+let cueFivePlayed = false;
+let cueThirtyPlayed = false;
+let cueTenPlayed = false;
+
+watch(
+  () => voucherStore.remainingMs,
+  (ms) => {
+    if (ms > sessionTotal.value) sessionTotal.value = ms;
+    if (!accessGranted.value || ms <= 0) return;
+
+    if (!cueFivePlayed && ms <= LOW_MS && ms > 30_000) {
+      cueFivePlayed = true;
+      notify("Less than 5 minutes of access left.", "warning", true);
+    }
+    if (!cueThirtyPlayed && ms <= 30_000 && ms > 10_000) {
+      cueThirtyPlayed = true;
+      notify("30 seconds left.", "warning", true);
+      void beep([{ freq: 660, dur: 0.14, gain: 0.07 }]);
+      if (!isDesktop.value) navigator.vibrate?.(30);
+    }
+    if (!cueTenPlayed && ms <= 10_000) {
+      cueTenPlayed = true;
+      void beep([
+        { freq: 880, dur: 0.07, gain: 0.08, delay: 0 },
+        { freq: 880, dur: 0.07, gain: 0.08, delay: 0.12 },
+        { freq: 880, dur: 0.07, gain: 0.08, delay: 0.24 },
+      ]);
+      if (!isDesktop.value) navigator.vibrate?.([40, 60, 40, 60, 40]);
+    }
+  },
+);
+
+watch(
+  () => voucherStore.activeUntil,
+  (v) => {
+    cueFivePlayed = false;
+    cueThirtyPlayed = false;
+    cueTenPlayed = false;
+    sessionTotal.value = v ? voucherStore.remainingMs : 0;
+    if (v) unlockAudio();
+  },
+  { immediate: true },
+);
+
+/* ------------------------------------------------------------------ */
+/* Refs / state                                                        */
+/* ------------------------------------------------------------------ */
 
 const stageEl = ref<HTMLElement | null>(null);
-const feedEl = ref<HTMLElement | null>(null);
-const stripEl = ref<HTMLElement | null>(null);
 const mv = ref<ModelViewerEl | null>(null);
+const searchField = ref<{ focus: () => void } | null>(null);
 
 const activeCategory = ref<string>(ALL);
 const activeSub = ref<string | null>(null);
 const searchText = ref("");
+const openGroups = ref<string[]>([]);
 
 const thumbs = ref<ThumbItem[]>([]);
 const totalCount = ref(0);
 const hasNext = ref(false);
-const page = ref(0);
 const thumbsLoading = ref(false);
 const thumbsError = ref<string | null>(null);
 let thumbsReq = 0;
@@ -695,49 +1189,60 @@ let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 const selectedId = ref<string | null>(null);
 
+/* Player state */
 const autoRotate = ref(true);
 const modelLoading = ref(false);
 const progress = ref(0);
 const glbError = ref(false);
 const glbErrorMessage = ref("The 3D model could not be loaded.");
-const isFullscreen = ref(false);
 const modelKey = ref(0);
+const isFullscreen = ref(false);
+const pseudoFs = ref(false);
+const exposure = ref(1.05);
+const shadowOn = ref(true);
+const stageBg = ref<"dark" | "light">("dark");
+const canAR = ref(false);
+const animationCount = ref(0);
+const animPlaying = ref(false);
+const shortcutsOpen = ref(false);
 const prefetching = new Set<string>();
 
-/* Mobile layout */
-const isMobile = ref(false);
-const detailsOpenId = ref<string | null>(null);
+/* Menus/tooltips must live inside the stage while it is fullscreen. */
+const overlayAttach = computed<HTMLElement | false>(() =>
+  isFullscreen.value && stageEl.value ? stageEl.value : false,
+);
+
+const hasFilters = computed(
+  () =>
+    activeCategory.value !== ALL ||
+    !!activeSub.value ||
+    !!searchText.value.trim(),
+);
 
 /* ------------------------------------------------------------------ */
 /* Cart                                                                */
 /* ------------------------------------------------------------------ */
 
-const cartHasItem = ref(false);
 const cartIds = ref<Set<string>>(new Set());
 
 function refreshCartIds() {
   try {
     const raw = sessionStorage.getItem(CART_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    const set = new Set<string>(
+    cartIds.value = new Set<string>(
       Array.isArray(parsed) ? parsed.map((p: any) => String(p.id)) : [],
     );
-    cartIds.value = set;
-    cartHasItem.value = set.size > 0;
   } catch {
     cartIds.value = new Set();
-    cartHasItem.value = false;
   }
 }
-
 const checkCart = refreshCartIds;
+const inCart = computed(
+  () => !!selectedId.value && cartIds.value.has(String(selectedId.value)),
+);
 
-function cartHasItemFor(t: { id: string }) {
-  return cartIds.value.has(String(t.id));
-}
-
-function addToCartFor(t: ThumbItem) {
-  const a = store.byId[t.id];
+function addToCart() {
+  const a = selectedId.value ? store.byId[selectedId.value] : null;
   if (!a) return;
   try {
     const raw = sessionStorage.getItem(CART_STORAGE_KEY);
@@ -746,16 +1251,15 @@ function addToCartFor(t: ThumbItem) {
     if (!cart.some((item: any) => item.id === a.id)) {
       cart.push({ ...a, qty: 1 });
       sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      if (!isDesktop.value) navigator.vibrate?.(12);
     }
     refreshCartIds();
   } catch {
     /* ignore */
   }
 }
-
-function addToCart() {
-  const a = artefact.value;
-  if (a) addToCartFor(a as unknown as ThumbItem);
+function goCheckout() {
+  void router.push("/museum/checkout");
 }
 
 /* ------------------------------------------------------------------ */
@@ -766,18 +1270,15 @@ const tokenParam = () => {
   const q = route.query.tokenKey;
   return (Array.isArray(q) ? q[0] : q)?.toString() ?? "";
 };
-
 function stripTokenFromUrl() {
   const { tokenKey: _drop, ...rest } = route.query;
   void router.replace({ query: rest });
 }
-
 async function enterGate() {
   const hadToken = !!tokenParam();
   const res = await voucherStore.enter(tokenParam());
   if (res.success && hadToken) stripTokenFromUrl();
 }
-
 watch(
   () => route.query.tokenKey,
   (k) => {
@@ -786,9 +1287,10 @@ watch(
 );
 
 async function onPurchaseSuccess(payload: any) {
+  unlockAudio();
+  buyOpen.value = false;
   await voucherStore.redeemPayload(payload);
-  // After success, jump to first card to seed selection
-  if (thumbs.value[0]) void select(thumbs.value[0]);
+  if (!selectedId.value && thumbs.value[0]) void select(thumbs.value[0]);
 }
 
 /* ------------------------------------------------------------------ */
@@ -818,8 +1320,7 @@ function pickGlb(urls: readonly string[] | null | undefined): string | null {
   let bestTs = "";
   let bestName = "";
   for (const u of urls) {
-    const path = pathOf(u);
-    if (!GLB_PATH_RE.test(path)) continue;
+    if (!GLB_PATH_RE.test(pathOf(u))) continue;
     const ts = glbTimestamp(u);
     const name = baseName(u);
     if (best === null || ts > bestTs || (ts === bestTs && name < bestName)) {
@@ -872,6 +1373,7 @@ const media = computed(() => {
   return { glb: null as string | null, cover: null as string | null };
 });
 const glbUrl = computed(() => media.value.glb);
+const coverUrl = computed(() => media.value.cover);
 const title = computed(() => artefact.value?.title ?? light.value?.title ?? "");
 const categoryText = computed(() => {
   const a = artefact.value ?? light.value;
@@ -881,9 +1383,6 @@ const categoryText = computed(() => {
     parts.push(store.subcategoryLabel(a.category, a.subcategory));
   return parts.join(" · ");
 });
-const priceText = computed(() =>
-  artefact.value ? priceTextFor(artefact.value) : "",
-);
 function priceTextFor(t: { currency?: string; price?: number }) {
   if (!t.currency || typeof t.price !== "number") return "";
   try {
@@ -896,6 +1395,9 @@ function priceTextFor(t: { currency?: string; price?: number }) {
     return `${t.currency} ${t.price}`;
   }
 }
+const priceText = computed(() =>
+  artefact.value ? priceTextFor(artefact.value) : "",
+);
 const updatedText = computed(() =>
   artefact.value
     ? new Date(artefact.value.updatedAt).toLocaleDateString("en-KE", {
@@ -903,29 +1405,30 @@ const updatedText = computed(() =>
       })
     : "",
 );
-function categoryLabelFor(t: {
-  category: string;
-  subcategory?: string | null;
-}) {
-  const parts = [store.categoryLabel(t.category)];
-  if (t.subcategory)
-    parts.push(store.subcategoryLabel(t.category, t.subcategory));
-  return parts.filter(Boolean).join(" · ");
-}
 const subcategories = computed(() =>
   activeCategory.value === ALL
     ? []
     : store.subcategoriesOf(activeCategory.value),
 );
-const pageCount = computed(() =>
-  Math.max(1, Math.ceil(totalCount.value / PAGE_SIZE)),
-);
 const selIndex = computed(() =>
   thumbs.value.findIndex((t) => t.id === selectedId.value),
 );
 
+const CATEGORY_ICONS: [RegExp, string][] = [
+  [/mask|ritual|spirit|ceremon/, "mdi-drama-masks"],
+  [/textile|cloth|bead|jewel|ornament|adorn|dress|regalia/, "mdi-necklace"],
+  [/pot|ceram|vessel|basket|household|domestic/, "mdi-pot-outline"],
+  [/tool|weapon|hunt|farm|agri|iron/, "mdi-hammer-wrench"],
+  [/music|instrument|drum/, "mdi-music-note"],
+  [/sculpt|statue|figure|carv|wood/, "mdi-chess-pawn"],
+];
+function categoryIcon(c: { slug: string; label: string }) {
+  const s = `${c.slug} ${c.label}`.toLowerCase();
+  return CATEGORY_ICONS.find(([re]) => re.test(s))?.[1] ?? "mdi-shape-outline";
+}
+
 /* ------------------------------------------------------------------ */
-/* Preflight                                                           */
+/* Preflight / loading / selection                                    */
 /* ------------------------------------------------------------------ */
 
 const probeCache = new Map<string, Promise<boolean>>();
@@ -948,11 +1451,7 @@ function probeGlb(url: string): Promise<boolean> {
   return p;
 }
 
-/* ------------------------------------------------------------------ */
-/* Filmstrip loading                                                   */
-/* ------------------------------------------------------------------ */
-
-async function loadThumbs(pick: "first" | "last" = "first") {
+async function loadThumbs(append = false) {
   const req = ++thumbsReq;
   thumbsLoading.value = true;
   thumbsError.value = null;
@@ -967,22 +1466,19 @@ async function loadThumbs(pick: "first" | "last" = "first") {
     const conn = await store.fetchThumbs({
       filter,
       limit: PAGE_SIZE,
-      offset: page.value * PAGE_SIZE,
+      offset: append ? thumbs.value.length : 0,
     });
     if (req !== thumbsReq) return;
 
-    thumbs.value = conn.edges;
+    thumbs.value = append ? [...thumbs.value, ...conn.edges] : conn.edges;
     totalCount.value = conn.totalCount;
     hasNext.value = conn.hasNextPage;
 
-    if (!thumbs.value.some((t) => t.id === selectedId.value)) {
-      const next =
-        pick === "last"
-          ? thumbs.value[thumbs.value.length - 1]
-          : thumbs.value[0];
+    if (!append && !thumbs.value.some((t) => t.id === selectedId.value)) {
+      const next = thumbs.value[0];
       if (next) void select(next);
       else clearSelection();
-    } else {
+    } else if (!append) {
       prefetchAround();
     }
   } catch (e) {
@@ -1003,14 +1499,20 @@ function clearSelection() {
 async function select(item: ThumbItem) {
   const id = item.id;
   selectedId.value = id;
-  detailsOpenId.value = null;
-  void scrollThumbIntoView(id);
   checkCart();
 
   glbError.value = false;
   glbErrorMessage.value = "The 3D model could not be loaded.";
   progress.value = 0;
   modelLoading.value = !!pickGlb(item.mediaUrls);
+
+  /* Keep the strip topped up before the user hits the end. */
+  if (
+    hasNext.value &&
+    !thumbsLoading.value &&
+    selIndex.value >= thumbs.value.length - 3
+  )
+    void loadThumbs(true);
 
   try {
     await store.fetchArtefact(id);
@@ -1028,21 +1530,15 @@ async function select(item: ThumbItem) {
       modelLoading.value = false;
     }
   }
-
   if (selectedId.value === id) prefetchAround();
-}
-
-function jumpTo(item: ThumbItem) {
-  const i = thumbs.value.findIndex((t) => t.id === item.id);
-  if (i < 0) return;
-  scrollToCard(i);
 }
 
 function prefetchAround() {
   const i = selIndex.value;
   if (i < 0) return;
-  const from = Math.max(0, i - PREFETCH_RADIUS);
-  const to = Math.min(thumbs.value.length, i + PREFETCH_RADIUS + 1);
+  const radius = isDesktop.value ? PREFETCH_RADIUS : 1;
+  const from = Math.max(0, i - radius);
+  const to = Math.min(thumbs.value.length, i + radius + 1);
   const ids: string[] = [];
   for (let k = from; k < to; k++) {
     const id = thumbs.value[k].id;
@@ -1072,52 +1568,65 @@ function prefetchAround() {
   );
 }
 
-async function scrollThumbIntoView(id: string) {
-  await nextTick();
-  stripEl.value
-    ?.querySelector<HTMLElement>(`[data-id="${id}"]`)
-    ?.scrollIntoView({
-      block: "nearest",
-      inline: "center",
-      behavior: "smooth",
-    });
-}
-
 function canStep(dir: 1 | -1) {
   const i = selIndex.value + dir;
   if (i >= 0 && i < thumbs.value.length) return true;
-  return dir === 1 ? hasNext.value : page.value > 0;
+  return dir === 1 && hasNext.value;
 }
 
 async function stepArtefact(dir: 1 | -1) {
   const i = selIndex.value + dir;
-  if (i >= 0 && i < thumbs.value.length) {
-    if (isMobile.value) {
-      scrollToCard(i);
-      return;
-    }
-    return select(thumbs.value[i]);
+  if (i >= 0 && i < thumbs.value.length) return select(thumbs.value[i]);
+  if (dir === 1 && hasNext.value && !thumbsLoading.value) {
+    await loadThumbs(true);
+    const next = thumbs.value[i];
+    if (next) return select(next);
   }
-  if (dir === 1 && hasNext.value) return changePage(1, "first");
-  if (dir === -1 && page.value > 0) return changePage(-1, "last");
 }
 
-async function changePage(delta: number, pick: "first" | "last" = "first") {
-  page.value = Math.max(0, page.value + delta);
-  await loadThumbs(pick);
+/* ------------------------------------------------------------------ */
+/* Category explorer                                                   */
+/* ------------------------------------------------------------------ */
+
+function closeDrawerOnPhone() {
+  if (!isDesktop.value) catDrawer.value = false;
 }
 
 function setCategory(slug: unknown) {
   activeCategory.value = (slug as string) || ALL;
   activeSub.value = null;
-  page.value = 0;
   clearSelection();
   void loadThumbs();
+  /* Keep the drawer open when there are sub-categories to choose from. */
+  if (
+    activeCategory.value === ALL ||
+    !store.subcategoriesOf(activeCategory.value).length
+  )
+    closeDrawerOnPhone();
 }
 
 function setSub(slug: unknown) {
   activeSub.value = (slug as string) || null;
-  page.value = 0;
+  clearSelection();
+  void loadThumbs();
+}
+
+function pickSub(cat: string, sub: string) {
+  if (activeCategory.value !== cat) activeCategory.value = cat;
+  setSub(activeSub.value === sub && activeCategory.value === cat ? null : sub);
+  closeDrawerOnPhone();
+}
+
+/* Auto-expand the active category's group. */
+watch(activeCategory, (slug) => {
+  if (slug !== ALL && !openGroups.value.includes(slug))
+    openGroups.value = [...openGroups.value, slug];
+});
+
+function resetFilters() {
+  activeCategory.value = ALL;
+  activeSub.value = null;
+  searchText.value = "";
   clearSelection();
   void loadThumbs();
 }
@@ -1126,40 +1635,20 @@ function onSearchChanged(value: string | null) {
   searchText.value = value ?? "";
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
-    page.value = 0;
     clearSelection();
     void loadThumbs();
   }, 300);
 }
 
-/* ------------------------------------------------------------------ */
-/* Mobile: snap-scroll feed                                            */
-/* ------------------------------------------------------------------ */
-
-function scrollToCard(index: number, behavior: ScrollBehavior = "smooth") {
-  const root = feedEl.value;
-  if (!root) return;
-  const cards = root.querySelectorAll<HTMLElement>(".feed__card");
-  const card = cards[index];
-  if (!card) return;
-  root.scrollTo({ top: card.offsetTop, behavior });
-}
-
-function toggleDetails(id: string) {
-  detailsOpenId.value = detailsOpenId.value === id ? null : id;
-}
-
-function handleStageTap() {
-  // Tap on the 3D stage → close the details drawer if open.
-  if (detailsOpenId.value) detailsOpenId.value = null;
+async function openSearch() {
+  catDrawer.value = true;
+  await nextTick();
+  setTimeout(() => searchField.value?.focus(), 250);
 }
 
 /* ------------------------------------------------------------------ */
 /* Viewer controls                                                     */
 /* ------------------------------------------------------------------ */
-
-const clamp = (v: number, lo: number, hi: number) =>
-  Math.min(hi, Math.max(lo, v));
 
 function orbitBy(dTheta: number, dPhi: number, instant = false) {
   const el = mv.value;
@@ -1188,11 +1677,63 @@ function resetView() {
 const toggleRotate = () => (autoRotate.value = !autoRotate.value);
 
 function toggleFullscreen() {
-  if (document.fullscreenElement) void document.exitFullscreen();
-  else void stageEl.value?.requestFullscreen?.();
+  const el = stageEl.value;
+  if (!el) return;
+  if (document.fullscreenElement) {
+    void document.exitFullscreen();
+    return;
+  }
+  if (pseudoFs.value) {
+    pseudoFs.value = false;
+    isFullscreen.value = false;
+    return;
+  }
+  const fallback = () => {
+    pseudoFs.value = true;
+    isFullscreen.value = true;
+  };
+  if (el.requestFullscreen) void el.requestFullscreen().catch(fallback);
+  else fallback(); /* iOS Safari: no element fullscreen */
+}
+const onFsChange = () =>
+  (isFullscreen.value = !!document.fullscreenElement || pseudoFs.value);
+
+async function snapshot() {
+  const el = mv.value;
+  if (!el?.toBlob)
+    return notify("Snapshots are not supported here.", "warning");
+  try {
+    const blob = await el.toBlob({ mimeType: "image/png" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const name =
+      title.value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") || "artefact";
+    a.href = url;
+    a.download = `${name}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify("Snapshot saved.", "success");
+  } catch {
+    notify("Could not capture a snapshot.", "error");
+  }
 }
 
-const onFsChange = () => (isFullscreen.value = !!document.fullscreenElement);
+function activateAR() {
+  void mv.value
+    ?.activateAR?.()
+    .catch(() => notify("AR is not available.", "warning"));
+}
+
+function toggleAnimation() {
+  const el = mv.value;
+  if (!el) return;
+  if (el.paused) el.play?.();
+  else el.pause?.();
+  animPlaying.value = !el.paused;
+}
 
 const controls = computed(() => [
   {
@@ -1214,7 +1755,7 @@ const controls = computed(() => [
   { icon: "mdi-restore", label: "Reset view (R)", run: resetView },
   {
     icon: isFullscreen.value ? "mdi-fullscreen-exit" : "mdi-fullscreen",
-    label: "Fullscreen (F)",
+    label: isFullscreen.value ? "Exit fullscreen (F)" : "Fullscreen (F)",
     run: toggleFullscreen,
   },
 ]);
@@ -1236,13 +1777,17 @@ function onProgress(e: Event) {
   if (typeof d.totalProgress === "number") p = d.totalProgress;
   else if (typeof d.loaded === "number" && typeof d.total === "number")
     p = d.total ? d.loaded / d.total : 0;
-  progress.value = Math.max(0, Math.min(100, p * 100));
+  progress.value = clamp(p * 100, 0, 100);
 }
 
 function onLoad() {
   modelLoading.value = false;
   progress.value = 100;
   glbError.value = false;
+  const el = mv.value;
+  animationCount.value = el?.availableAnimations?.length ?? 0;
+  animPlaying.value = animationCount.value > 0 && !el?.paused;
+  canAR.value = !!el?.canActivateAR;
 }
 
 function onModelError() {
@@ -1264,98 +1809,10 @@ function retryModel() {
 watch(glbUrl, (u) => {
   glbError.value = false;
   progress.value = 0;
+  canAR.value = false;
+  animationCount.value = 0;
   modelLoading.value = !!u;
   if (u) modelKey.value++;
-});
-
-/* ------------------------------------------------------------------ */
-/* Mobile: intersection + breakpoint observers                         */
-/* ------------------------------------------------------------------ */
-
-let io: IntersectionObserver | null = null;
-let mq: MediaQueryList | null = null;
-
-function onBreakpointChange(e: MediaQueryListEvent | MediaQueryList) {
-  isMobile.value = e.matches;
-  // Defer so the DOM updates from v-if before we try to attach IO.
-  void nextTick(() => setupFeedIO());
-}
-
-function setupFeedIO() {
-  io?.disconnect();
-  io = null;
-  if (!isMobile.value) return;
-  const root = feedEl.value;
-  if (!root) return;
-
-  io = new IntersectionObserver(
-    (entries) => {
-      // Pick the most-visible card.
-      const visible = entries
-        .filter((e) => e.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-      const best = visible[0];
-      if (!best) return;
-      const id = (best.target as HTMLElement).dataset.id;
-      if (id && id !== selectedId.value) {
-        const t = thumbs.value.find((x) => x.id === id);
-        if (t) void select(t);
-      }
-    },
-    {
-      root,
-      threshold: [0.55, 0.75, 0.95],
-    },
-  );
-
-  root
-    .querySelectorAll<HTMLElement>(".feed__card[data-id]")
-    .forEach((el) => io!.observe(el));
-}
-
-/* Sentinel → load more when scrolled past */
-let sentinelIO: IntersectionObserver | null = null;
-function setupSentinel() {
-  sentinelIO?.disconnect();
-  sentinelIO = null;
-  const root = feedEl.value;
-  if (!root) return;
-  const sentinel = root.querySelector<HTMLElement>(".feed__sentinel");
-  if (!sentinel) return;
-  sentinelIO = new IntersectionObserver(
-    (entries) => {
-      if (
-        entries.some((e) => e.isIntersecting) &&
-        hasNext.value &&
-        !thumbsLoading.value
-      ) {
-        void changePage(1, "first");
-      }
-    },
-    { root, threshold: 0.2 },
-  );
-  sentinelIO.observe(sentinel);
-}
-
-watch(thumbs, () => {
-  if (!isMobile.value) return;
-  void nextTick(() => {
-    setupFeedIO();
-    setupSentinel();
-    // Align current selection into view (no scroll if same card).
-    const i = selIndex.value;
-    if (i >= 0) {
-      const root = feedEl.value;
-      const card = root?.querySelectorAll<HTMLElement>(".feed__card")[i];
-      if (card && root) {
-        const rect = card.getBoundingClientRect();
-        const rootRect = root.getBoundingClientRect();
-        const notVisible =
-          rect.top < rootRect.top - 10 || rect.bottom > rootRect.bottom + 10;
-        if (notVisible) scrollToCard(i, "auto");
-      }
-    }
-  });
 });
 
 /* ------------------------------------------------------------------ */
@@ -1369,7 +1826,7 @@ function onKey(e: KeyboardEvent) {
   const t = e.target as HTMLElement | null;
   if (
     t?.closest(
-      'input,textarea,select,[contenteditable="true"],[role="tablist"],[role="menu"],[role="dialog"]',
+      'input,textarea,select,[contenteditable="true"],[role="tablist"],[role="menu"],[role="dialog"],[role="listbox"]',
     )
   )
     return;
@@ -1386,18 +1843,9 @@ function onKey(e: KeyboardEvent) {
       orbitBy(nudge, 0);
       break;
     case "ArrowUp":
-      // On mobile the vertical feed owns ArrowUp/Down.
-      if (isMobile.value) {
-        handled = false;
-        break;
-      }
       orbitBy(0, -nudge);
       break;
     case "ArrowDown":
-      if (isMobile.value) {
-        handled = false;
-        break;
-      }
       orbitBy(0, nudge);
       break;
     case "+":
@@ -1480,23 +1928,33 @@ const stopPad = () => {
   cancelAnimationFrame(raf);
   raf = 0;
 };
+function onVisibility() {
+  if (document.hidden && raf) {
+    cancelAnimationFrame(raf);
+    raf = 0;
+  } else if (
+    !document.hidden &&
+    Array.from(navigator.getGamepads?.() ?? []).some(Boolean)
+  ) {
+    startPad();
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Lifecycle                                                           */
 /* ------------------------------------------------------------------ */
 
 onMounted(() => {
+  readMuteState();
+  detectReducedMotion();
+
   window.addEventListener("keydown", onKey, true);
   document.addEventListener("fullscreenchange", onFsChange);
+  document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("gamepadconnected", startPad);
   window.addEventListener("gamepaddisconnected", stopPad);
 
-  if (typeof window !== "undefined" && "matchMedia" in window) {
-    mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    onBreakpointChange(mq);
-    mq.addEventListener("change", onBreakpointChange);
-  }
-
+  unlockAudio();
   checkCart();
   store.clearCurrent();
 });
@@ -1506,13 +1964,16 @@ onBeforeUnmount(() => {
   if (searchTimer) clearTimeout(searchTimer);
   window.removeEventListener("keydown", onKey, true);
   document.removeEventListener("fullscreenchange", onFsChange);
+  document.removeEventListener("visibilitychange", onVisibility);
   window.removeEventListener("gamepadconnected", startPad);
   window.removeEventListener("gamepaddisconnected", stopPad);
-
-  mq?.removeEventListener("change", onBreakpointChange);
-  io?.disconnect();
-  sentinelIO?.disconnect();
+  reducedMq?.removeEventListener?.("change", onReducedChange);
   cancelAnimationFrame(raf);
+
+  if (audioCtx) {
+    void audioCtx.close().catch(() => undefined);
+    audioCtx = null;
+  }
 });
 
 /* ------------------------------------------------------------------ */
@@ -1526,506 +1987,188 @@ void loadThumbs();
 </script>
 
 <style scoped>
-/* ================================================================ */
-/* Shared                                                            */
-/* ================================================================ */
+/* ~20% custom CSS: layout glue, the 3D stage, and small touches. */
+
 .explorer {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
   position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  background: rgb(var(--v-theme-background));
 }
-.explorer__toolbar {
-  flex: 0 0 auto;
+/* Phones/tablets: full-screen app surface above site chrome. */
+.explorer--compact {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
 }
-.explorer__tabs {
-  max-width: 55vw;
-}
-.brand-link {
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: inherit;
-  flex-shrink: 0;
-}
-.explorer__search {
-  flex: 0 0 260px;
-  max-width: 260px;
-}
-.utility-cluster {
-  display: flex;
-  align-items: center;
-  gap: 2px;
+@media (min-width: 960px) {
+  .explorer:not(.explorer--compact) {
+    height: 97vh;
+  }
 }
 
-/* ================================================================ */
-/* Desktop                                                           */
-/* ================================================================ */
-.explorer__stage-col {
+.explorer__main {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #0d0f12;
-  container-type: size;
 }
-.explorer__detail-col {
-  background: rgb(var(--v-theme-surface));
-  border-inline-start: thin solid
-    rgba(var(--v-border-color), var(--v-border-opacity));
-}
-.explorer__description {
-  white-space: pre-line;
-  max-width: 62ch;
-  line-height: 1.6;
-}
-.explorer__meta {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 10px 16px;
-  align-items: baseline;
-}
-.explorer__meta dt {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  font-size: 0.8125rem;
-}
-.explorer__meta dd {
-  margin: 0;
-}
-.stage {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: radial-gradient(ellipse at 50% 40%, #232830 0%, #0d0f12 75%);
-  color: #fff;
-}
-.stage:fullscreen {
-  aspect-ratio: auto;
-  width: 100vw;
-  height: 100vh;
-}
-.stage__viewer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  --poster-color: transparent;
-}
-.stage__empty {
-  position: absolute;
-  inset: 0;
+.explorer__col {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.7;
-  text-align: center;
-  padding: 24px;
 }
-.stage__progress {
-  position: absolute !important;
-  inset: auto 0 0 0;
+.explorer__desc {
+  white-space: pre-line;
+  line-height: 1.6;
 }
-.stage__alert {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 90%;
-}
-.stage__caption {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: 14px 16px 36px;
-  pointer-events: none;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent);
-}
-.stage__nav {
-  position: absolute !important;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.35) !important;
-  color: #fff !important;
-}
-.stage__nav--prev {
-  left: 10px;
-}
-.stage__nav--next {
-  right: 10px;
-}
-.stage__controls {
-  position: absolute;
-  left: 50%;
-  bottom: 12px;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: rgba(13, 15, 18, 0.72);
-  backdrop-filter: blur(6px);
-}
-.stage__controls :deep(.v-btn) {
-  color: #fff;
-}
-.stage__kbd {
+.explorer__kbd {
   font: inherit;
   font-size: 0.75rem;
   padding: 1px 6px;
   border: thin solid rgba(var(--v-border-color), 0.4);
   border-radius: 4px;
 }
-
-@media (min-width: 960px) {
-  .explorer {
-    height: 97vh;
-  }
-  .explorer__top {
-    flex: 1 1 0;
-    min-height: 0;
-    flex-wrap: nowrap;
-  }
-  .explorer__stage-col,
-  .explorer__detail-col {
-    height: 100%;
-    min-height: 0;
-  }
-  .explorer__detail-col {
-    overflow-y: auto;
-  }
-  .stage {
-    width: min(100cqw, calc(100cqh * 16 / 9));
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+.pulse {
+  animation: explorer-pulse 1s ease-in-out infinite;
+}
+@keyframes explorer-pulse {
+  50% {
+    opacity: 0.55;
   }
 }
 
-/* ================================================================ */
-/* Mobile: vertical snap feed (TikTok / Reels / Shorts style)        */
-/* ================================================================ */
-.feed {
-  flex: 1 1 auto;
+/* ---------------- 3D stage ---------------- */
+.stage {
+  position: relative;
+  flex: 1 1 0;
   min-height: 0;
-  width: 100%;
-  height: calc(100dvh - 56px); /* toolbar height */
-  overflow-y: auto;
-  overflow-x: hidden;
-  scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
-  background: #000;
-  color: #fff;
-  position: relative;
-  scrollbar-width: none;
-}
-.feed::-webkit-scrollbar {
-  display: none;
-}
-
-.feed__card {
-  position: relative;
-  width: 100%;
-  height: calc(100dvh - 56px);
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
   overflow: hidden;
-  contain: layout paint;
-  background: #000;
+  color: #fff;
+  background: radial-gradient(ellipse at 50% 40%, #232830 0%, #0d0f12 75%);
 }
-
-.feed__card--active .feed__caption {
-  opacity: 1;
+.stage--light {
+  color: #111;
+  background: radial-gradient(ellipse at 50% 40%, #ffffff 0%, #d5d9df 80%);
 }
-
-.feed__card--skeleton {
-  display: flex;
-  align-items: stretch;
-  background: #111;
+.stage--pseudo-fs {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
 }
-
-.feed__empty {
-  padding: 32px 16px;
-  text-align: center;
-}
-
-.feed__stage {
+.stage__viewer,
+.stage__poster {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(ellipse at 50% 40%, #232830 0%, #0d0f12 75%);
-  touch-action: pan-y;
-}
-
-.feed__viewer {
   width: 100%;
   height: 100%;
+}
+.stage__viewer {
   background: transparent;
   --poster-color: transparent;
+  --progress-bar-color: transparent; /* we draw our own progress */
 }
-
-.feed__empty-stage,
-.feed__loading-stage {
+.stage__poster {
+  opacity: 0.45;
+  filter: blur(6px);
+  pointer-events: none;
+}
+.stage__status {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  opacity: 0.75;
-  text-align: center;
+  gap: 8px;
   padding: 24px;
-}
-
-/* Caption overlay (top) */
-.feed__caption {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: 16px 16px 40px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), transparent);
+  text-align: center;
+  opacity: 0.85;
   pointer-events: none;
-  opacity: 0.95;
-  transition: opacity 0.2s ease;
 }
-.feed__caption .opacity-80 {
-  opacity: 0.8;
-}
-
-/* Right-side action rail (TikTok style) */
-.feed__rail {
+.stage__alert {
   position: absolute;
-  right: 8px;
-  bottom: 180px;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  max-width: 92%;
+}
+.stage__top {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  padding: 10px 12px 28px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
+}
+.stage__glass {
+  background: rgba(14, 16, 20, 0.62) !important;
+  color: #fff !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.stage__nav {
+  position: absolute !important;
+  top: 50%;
+  z-index: 2;
+  transform: translateY(-50%);
+}
+.stage__nav--prev {
+  left: 8px;
+}
+.stage__nav--next {
+  right: 8px;
+}
+.stage__controls {
+  position: absolute;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  z-index: 3;
+  transform: translateX(-50%);
+  max-width: calc(100% - 16px);
+}
+.stage__controls :deep(.v-btn) {
+  color: #fff;
+}
+.stage__progress {
+  position: absolute !important;
+  inset: auto 0 0 0;
   z-index: 3;
 }
-.feed__rail-btn {
-  color: #fff !important;
-  background: rgba(0, 0, 0, 0.35) !important;
-  backdrop-filter: blur(6px);
-  border-radius: 999px !important;
-  height: 52px !important;
-  width: 52px !important;
-  display: flex !important;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.feed__rail-label {
-  font-size: 10px;
-  margin-top: 2px;
-  line-height: 1;
-}
 
-/* Bottom drawer for details */
-.feed__details {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 96px; /* above filmstrip */
-  max-height: 55dvh;
-  display: flex;
-  flex-direction: column;
-  background: rgba(10, 12, 14, 0.92);
-  backdrop-filter: blur(10px);
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  transform: translateY(calc(100% - 40px));
-  transition: transform 0.25s ease;
-  z-index: 4;
-  will-change: transform;
-}
-.feed__details.is-open {
-  transform: translateY(0);
-}
-.feed__handle {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 0 4px;
-  cursor: pointer;
-}
-.feed__handle-bar {
-  display: block;
-  width: 42px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.35);
-}
-.feed__handle-hint {
-  font-size: 11px;
-  opacity: 0.75;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.feed__details-body {
-  overflow-y: auto;
-  padding: 4px 16px 20px;
-  color: #eee;
-  overscroll-behavior: contain;
-}
-.feed__details-inner .text-primary {
-  color: #8fe3b4 !important;
-}
-.feed__description {
-  line-height: 1.55;
-  font-size: 0.9rem;
-  white-space: pre-line;
-  margin: 8px 0 12px;
-}
-.feed__meta {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 6px 12px;
-  font-size: 0.8rem;
-  margin: 0;
-}
-.feed__meta dt {
-  opacity: 0.65;
-}
-.feed__meta dd {
-  margin: 0;
-}
-
-/* Inline filmstrip */
-.feed__strip {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding: 10px 12px 12px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
-  z-index: 2;
-  scrollbar-width: none;
-}
-.feed__strip::-webkit-scrollbar {
-  display: none;
-}
-.feed__strip-thumb {
-  flex: 0 0 auto;
-  width: 56px;
-  height: 42px;
-  padding: 0;
-  background: none;
-  border: 0;
-  border-radius: 6px;
-  overflow: hidden;
-  outline: 2px solid transparent;
-  outline-offset: 1px;
-  cursor: pointer;
-  transition: outline-color 0.15s;
-}
-.feed__strip-thumb.is-active,
-.feed__strip-thumb:focus-visible {
-  outline-color: #8fe3b4;
-}
-.feed__strip-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.feed__strip-img--none {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  color: #aaa;
-}
-
-/* Sentinel (triggers pagination when it enters the viewport) */
-.feed__sentinel {
-  height: 1px;
-  width: 100%;
-}
-
-/* -------- Older styles preserved for other pages / fallbacks ------ */
-.explorer__strip {
-  flex: 0 0 auto;
-  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  background: rgb(var(--v-theme-surface));
-}
-.thumbs {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 4px;
-  scroll-snap-type: x proximity;
-}
+/* ---------------- Filmstrip ---------------- */
 .thumb {
   flex: 0 0 auto;
-  width: 128px;
-  padding: 0;
-  text-align: left;
-  background: none;
-  border: 0;
-  cursor: pointer;
-  scroll-snap-align: center;
-  color: inherit;
+  width: 112px;
 }
-.thumb__img {
-  width: 128px;
-  height: 96px;
-  border-radius: 6px;
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  transition: outline-color 0.15s;
+.thumb--active {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 1px;
 }
-.thumb__img--none {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.thumb__none {
+  aspect-ratio: 4 / 3;
   background: rgba(var(--v-theme-on-surface), 0.08);
 }
-.thumb:hover .thumb__img {
-  outline-color: rgba(var(--v-theme-primary), 0.5);
+.thumb--more {
+  height: auto !important;
+  align-self: stretch;
 }
-.thumb:focus-visible .thumb__img,
-.thumb--active .thumb__img {
-  outline-color: rgb(var(--v-theme-primary));
-}
-.thumb__label {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.thumb--active .thumb__label {
-  font-weight: 600;
-}
-
-@media (max-width: 959px) {
-  .stage {
-    aspect-ratio: 4 / 3;
+@media (min-width: 960px) {
+  .thumb {
+    width: 136px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .thumb__img,
-  .feed__details,
-  .feed__caption {
-    transition: none !important;
-  }
-  .feed {
-    scroll-behavior: auto;
+  .pulse {
+    animation: none;
   }
 }
 </style>

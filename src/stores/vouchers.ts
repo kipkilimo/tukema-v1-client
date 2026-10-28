@@ -58,6 +58,9 @@ export interface RedeemResult {
 const STORAGE_KEY = "tukema.voucher.session";
 const TERMINAL_ID = "web-explorer";
 
+/** Anything > 30s → coarse (whole minutes). ≤ 30s → fine (whole seconds). */
+const FINE_THRESHOLD_MS = 30_000;
+
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return Promise.race([
     p,
@@ -72,8 +75,45 @@ export const useVoucherStore = defineStore("vouchers", () => {
   const voucher = ref<any | null>(null);
   /** Absolute epoch ms when the granted window ends. */
   const activeUntil = ref<number | null>(null);
-  /** Ticks every second so any "time remaining" UI re-renders. */
+  /** Reactive clock — ticks every second only when in the "hot" window. */
   const nowMs = ref<number>(Date.now());
+
+  /* ---------------- Remaining time ---------------- */
+
+  const remainingMs = computed(() =>
+    activeUntil.value === null
+      ? 0
+      : Math.max(0, activeUntil.value - nowMs.value),
+  );
+
+  /**
+   * Coarse label: whole minutes, rounded UP so "1 min" doesn't flip to
+   * "0 min" until the user actually has < 60s left.
+   */
+  const remainingLabel = computed(() => {
+    const ms = remainingMs.value;
+    if (ms <= 0) return "";
+    const totalSec = Math.ceil(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    if (m >= 1) return `${m} min`;
+    // Should be rare — fine label takes over from 30s anyway.
+    return `${totalSec}s`;
+  });
+
+  /** Fine label — only meaningful in the last 30 seconds. */
+  const remainingLabelFine = computed(() => {
+    const ms = remainingMs.value;
+    if (ms <= 0) return "";
+    const totalSec = Math.ceil(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  });
+
+  /** True while the countdown is in the last 30 seconds. */
+  const isFinalCountdown = computed(
+    () => remainingMs.value > 0 && remainingMs.value <= FINE_THRESHOLD_MS,
+  );
 
   const isRedeemed = computed(
     () =>
@@ -82,24 +122,11 @@ export const useVoucherStore = defineStore("vouchers", () => {
       activeUntil.value > nowMs.value,
   );
 
-  const remainingMs = computed(() =>
-    activeUntil.value === null
-      ? 0
-      : Math.max(0, activeUntil.value - nowMs.value),
-  );
+  /* ---------------- Timer plumbing (adaptive) ---------------- */
 
-  const remainingLabel = computed(() => {
-    const ms = remainingMs.value;
-    if (ms <= 0) return "";
-    const totalSec = Math.ceil(ms / 1000);
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  });
-
-  // ---------- internal timer plumbing ----------
   let expiryTimer: ReturnType<typeof setTimeout> | null = null;
   let tickTimer: ReturnType<typeof setInterval> | null = null;
+  let tickIntervalMs = 0;
 
   function stopTimers() {
     if (expiryTimer) {
@@ -110,19 +137,44 @@ export const useVoucherStore = defineStore("vouchers", () => {
       clearInterval(tickTimer);
       tickTimer = null;
     }
+    tickIntervalMs = 0;
+  }
+
+  /**
+   * Re-arms the ticker for the right cadence:
+   *   > 30s remaining → once per minute
+   *   ≤ 30s remaining → once per second
+   * Called after every tick so cadence flips exactly once at 30s.
+   */
+  function rescheduleTick() {
+    if (tickTimer) {
+      clearInterval(tickTimer);
+      tickTimer = null;
+    }
+    if (!activeUntil.value) return;
+    const left = activeUntil.value - Date.now();
+    if (left <= 0) return;
+
+    const desired = left <= FINE_THRESHOLD_MS ? 1000 : 60_000;
+    if (desired === tickIntervalMs && tickTimer) return;
+    tickIntervalMs = desired;
+
+    tickTimer = setInterval(() => {
+      nowMs.value = Date.now();
+      const left = (activeUntil.value ?? 0) - nowMs.value;
+      const want = left > 0 && left <= FINE_THRESHOLD_MS ? 1000 : 60_000;
+      if (want !== tickIntervalMs) rescheduleTick();
+    }, desired);
   }
 
   function startTimers() {
     stopTimers();
     if (!activeUntil.value || activeUntil.value <= Date.now()) return;
 
-    // 1s ticker for countdown UIs
-    tickTimer = setInterval(() => {
-      nowMs.value = Date.now();
-    }, 1000);
+    nowMs.value = Date.now();
+    rescheduleTick();
 
-    // the kick-out — flip to "expired" exactly when the window ends
-    const delay = activeUntil.value - Date.now();
+    // Kick-out — fires precisely when the window ends.
     expiryTimer = setTimeout(
       () => {
         nowMs.value = Date.now();
@@ -137,11 +189,12 @@ export const useVoucherStore = defineStore("vouchers", () => {
         }
         stopTimers();
       },
-      Math.max(0, delay),
+      Math.max(0, activeUntil.value - Date.now()),
     );
   }
 
-  // ---------- persistence ----------
+  /* ---------------- Persistence ---------------- */
+
   function persist() {
     try {
       sessionStorage.setItem(
@@ -175,7 +228,6 @@ export const useVoucherStore = defineStore("vouchers", () => {
       const until: number =
         typeof saved.activeUntil === "number" ? saved.activeUntil : 0;
       if (until <= Date.now()) {
-        // Session lapsed while away — do NOT restore.
         clearPersisted();
         return false;
       }
@@ -215,7 +267,8 @@ export const useVoucherStore = defineStore("vouchers", () => {
     }
   })();
 
-  // ---------- peek (non-consuming check) ----------
+  /* ---------------- Peek (non-consuming) ---------------- */
+
   async function peek(token: string): Promise<any | null> {
     status.value = "checking";
     error.value = null;
@@ -247,7 +300,8 @@ export const useVoucherStore = defineStore("vouchers", () => {
     }
   }
 
-  // ---------- redeem (consuming) ----------
+  /* ---------------- Redeem (consuming) ---------------- */
+
   async function redeem(token: string): Promise<RedeemResult> {
     status.value = "redeeming";
     error.value = null;
@@ -282,8 +336,6 @@ export const useVoucherStore = defineStore("vouchers", () => {
         };
       }
 
-      // Success — compute the session window from server's `sessionEndsAt`
-      // (fall back to redeemedUntil, then durationMins on the client).
       const endsAtRaw = res.sessionEndsAt ?? res.voucher?.redeemedUntil ?? null;
       let endsAt = endsAtRaw ? new Date(endsAtRaw).getTime() : NaN;
       if (!Number.isFinite(endsAt)) {
@@ -312,7 +364,8 @@ export const useVoucherStore = defineStore("vouchers", () => {
     }
   }
 
-  // ---------- enter (gate entry) ----------
+  /* ---------------- Gate entry ---------------- */
+
   async function enter(rawQuery: string): Promise<RedeemResult> {
     const raw = rawQuery.trim();
 
@@ -334,7 +387,6 @@ export const useVoucherStore = defineStore("vouchers", () => {
       return { success: false, message: error.value };
     }
 
-    // Same token already active this session → no-op.
     if (restore() && code.value === token && isRedeemed.value) {
       return {
         success: true,
@@ -344,7 +396,6 @@ export const useVoucherStore = defineStore("vouchers", () => {
       };
     }
 
-    // Peek first — the server will tell us if the session is still running.
     const found = await peek(token);
     if (!found) {
       status.value = "error";
@@ -357,7 +408,6 @@ export const useVoucherStore = defineStore("vouchers", () => {
     const active: boolean = v.active === true;
     const st: string = String(v.status ?? "");
 
-    // Case A: currently active session (e.g. user re-opened the tab mid-session)
     if (active && v.redeemedUntil) {
       const until = new Date(v.redeemedUntil).getTime();
       voucher.value = v;
@@ -375,7 +425,6 @@ export const useVoucherStore = defineStore("vouchers", () => {
       };
     }
 
-    // Case B: previously redeemed but window lapsed → kick out.
     if (st === "redeemed" && v.redeemedUntil) {
       status.value = "expired";
       error.value =
@@ -398,11 +447,11 @@ export const useVoucherStore = defineStore("vouchers", () => {
       return { success: false, message: error.value };
     }
 
-    // Case C: untouched ticket → redeem.
     return redeem(token);
   }
 
-  // ---------- reset ----------
+  /* ---------------- Reset helpers ---------------- */
+
   function reset() {
     stopTimers();
     status.value = "idle";
@@ -413,7 +462,6 @@ export const useVoucherStore = defineStore("vouchers", () => {
     clearPersisted();
   }
 
-  /** Hides the gate immediately (e.g. on logout). */
   function forceExpire() {
     stopTimers();
     status.value = "expired";
@@ -423,7 +471,6 @@ export const useVoucherStore = defineStore("vouchers", () => {
     clearPersisted();
   }
 
-  /** For future callers that pass the raw purchase payload. */
   async function redeemPayload(payload: any): Promise<RedeemResult> {
     const raw =
       payload?.code ??
@@ -450,6 +497,8 @@ export const useVoucherStore = defineStore("vouchers", () => {
     isRedeemed,
     remainingMs,
     remainingLabel,
+    remainingLabelFine,
+    isFinalCountdown,
     restore,
     peek,
     redeem,
